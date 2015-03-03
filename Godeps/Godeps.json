@@ -1,0 +1,5 @@
+{
+	"ImportPath": "github.com/9seconds/guide-dog",
+	"GoVersion": "go1.2.1",
+	"Deps": []
+}
