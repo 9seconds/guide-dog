@@ -27,16 +27,18 @@ const (
 )
 
 type Options struct {
-	Debug           bool
-	Signal          syscall.Signal
-	GracefulTimeout time.Duration
 	ConfigFormat    ConfigFormat
 	ConfigPath      string
+	Debug           bool
+	Envs            map[string]string
+	GracefulTimeout time.Duration
 	LockFile        string
+	Signal          syscall.Signal
 	Supervisor      SupervisorMode
 }
 
-func NewOptions(debug bool, signal string, gracefulTimeout time.Duration, configFormat string,
+func NewOptions(debug bool, signal string, envs []string,
+	gracefulTimeout time.Duration, configFormat string,
 	configPath string, lockFile string, supervise bool,
 	restartOnConfigChanges bool) (options *Options, err error) {
 	convertedConfigFormat, err := parseConfigFormat(configFormat)
@@ -49,6 +51,8 @@ func NewOptions(debug bool, signal string, gracefulTimeout time.Duration, config
 		return
 	}
 
+	convertedEnvs := parseEnvs(envs)
+
 	supervisorMode := SUPERVISOR_MODE_NONE
 	if supervise {
 		if restartOnConfigChanges {
@@ -59,12 +63,13 @@ func NewOptions(debug bool, signal string, gracefulTimeout time.Duration, config
 	}
 
 	options = &Options{
-		Debug:           debug,
-		Signal:          convertedSignal,
-		GracefulTimeout: gracefulTimeout,
 		ConfigFormat:    convertedConfigFormat,
 		ConfigPath:      configPath,
+		Debug:           debug,
+		Envs:            convertedEnvs,
+		GracefulTimeout: gracefulTimeout,
 		LockFile:        lockFile,
+		Signal:          convertedSignal,
 		Supervisor:      supervisorMode,
 	}
 
@@ -169,6 +174,21 @@ func parseSignalName(name string) (signal syscall.Signal, err error) {
 		signal = syscall.SIGXFSZ
 	default:
 		err = fmt.Errorf("Unknown signal definition %s", name)
+	}
+
+	return
+}
+
+func parseEnvs(envs []string) (converted map[string]string) {
+	converted = make(map[string]string)
+
+	for _, env := range envs {
+		split := strings.SplitN(env, "=", 2)
+		if len(split) == 2 {
+			converted[split[0]] = split[1]
+		} else {
+			converted[split[0]] = ""
+		}
 	}
 
 	return

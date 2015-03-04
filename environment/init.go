@@ -28,16 +28,16 @@ func NewEnvironment(options *opts.Options) (env *Environment, err error) {
 func getParser(options *opts.Options) environmentParser {
 	switch options.ConfigFormat {
 	case opts.CONFIG_FORMAT_NONE:
-		return ConfigFormatNoneParser
+		return configFormatNoneParser
 	case opts.CONFIG_FORMAT_JSON:
-		return ConfigFormatJSONParser
-	// case opts.CONFIG_FORMAT_YAML:
-	// 	return ConfigFormatYAMLParser
-	// case opts.CONFIG_FORMAT_INI:
-	// 	return ConfigFormatINIParser
-	// case opts.CONFIG_FORMAT_ENVDIR:
-	// 	return ConfigFormatEnvDirParser
+		return configFormatJSONParser
+	case opts.CONFIG_FORMAT_YAML:
+		return configFormatYAMLParser
+	case opts.CONFIG_FORMAT_INI:
+		return configFormatINIParser
+	case opts.CONFIG_FORMAT_ENVDIR:
+		return configFormatEnvDirParser
 	default:
-		return ConfigFormatNoneParser
+		return configFormatNoneParser
 	}
 }

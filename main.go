@@ -17,6 +17,10 @@ var (
 		Flag("debug", "Enable debug mode.").
 		Short('d').
 		Bool()
+	envs = cmdLine.
+		Flag("env", "Environment variable to set. There may be several options '-e OS=Linux -e H=1'.").
+		Short('e').
+		Strings()
 	signal = cmdLine.
 		Flag("signal", "Signal to graceful shutting down of the given process.").
 		Short('s').
@@ -54,7 +58,17 @@ var (
 func main() {
 	kingpin.MustParse(cmdLine.Parse(os.Args[1:]))
 
-	parsedOptions, err := options.NewOptions(*debug, *signal, *gracefulTimeout, *configFormat, *configPath, *lockFile, *supervise, *superviseRestartOnConfigPathChanges)
+	parsedOptions, err := options.NewOptions(
+		*debug,
+		*signal,
+		*envs,
+		*gracefulTimeout,
+		*configFormat,
+		*configPath,
+		*lockFile,
+		*supervise,
+		*superviseRestartOnConfigPathChanges,
+	)
 	if err != nil {
 		panic(err)
 	}

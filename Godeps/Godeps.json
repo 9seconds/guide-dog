@@ -7,9 +7,17 @@
 			"Rev": "6b4e7dc5e3143b85ea77909c72caf89416fc2915"
 		},
 		{
+			"ImportPath": "github.com/vaughan0/go-ini",
+			"Rev": "a98ad7ee00ec53921f08832bc06ecf7fd600e6a1"
+		},
+		{
 			"ImportPath": "gopkg.in/alecthomas/kingpin.v1",
 			"Comment": "v1.3.6",
 			"Rev": "55a69a226d28a43b913720f5d765706d49c8fa9e"
+		},
+		{
+			"ImportPath": "gopkg.in/yaml.v2",
+			"Rev": "a1c4bcb6c278a41992e2f4f0f29a44b4146daa5c"
 		}
 	]
 }
