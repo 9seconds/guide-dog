@@ -1,25 +1,49 @@
 package environment
 
 import (
+	"os"
+
 	opts "github.com/9seconds/guide-dog/options"
 )
 
 type environmentParser func(string) (map[string]string, error)
 
 type Environment struct {
-	Options *opts.Options
-
-	parser environmentParser
+	options         *opts.Options
+	parser          environmentParser
+	previousUpdates map[string]string
 }
 
 func (env *Environment) Parse() (map[string]string, error) {
-	return env.parser(env.Options.ConfigPath)
+	return env.parser(env.options.ConfigPath)
+}
+
+func (env *Environment) Update() (err error) {
+	variables, err := env.Parse()
+	if err != nil {
+		return
+	}
+
+	for name, value := range variables {
+		env.previousUpdates[name] = value
+		os.Setenv(name, value)
+	}
+	for name, _ := range env.previousUpdates {
+		if _, ok := variables[name]; !ok {
+			delete(env.previousUpdates, name)
+			// TODO: go 1.4
+			// os.Unsetenv(name)
+		}
+	}
+
+	return
 }
 
 func NewEnvironment(options *opts.Options) (env *Environment, err error) {
 	env = &Environment{
-		Options: options,
-		parser:  getParser(options),
+		options:         options,
+		parser:          getParser(options),
+		previousUpdates: make(map[string]string),
 	}
 
 	return
