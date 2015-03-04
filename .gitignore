@@ -22,3 +22,8 @@ _testmain.go
 *.exe
 *.test
 *.prof
+
+Godeps/Readme
+Godeps/_workspace
+
+guide-dog
