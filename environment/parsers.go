@@ -8,29 +8,30 @@ import (
 	"strings"
 
 	ini "github.com/vaughan0/go-ini"
-
 	yaml "gopkg.in/yaml.v2"
 )
+
+type unmarshal func([]byte, interface{}) error
 
 func configFormatNoneParser(path string) (envs map[string]string, err error) {
 	return make(map[string]string), nil
 }
 
-func configFormatJSONParser(filename string) (envs map[string]string, err error) {
+func configUnmarshall(unpack unmarshal, filename string) (envs map[string]string, err error) {
 	content, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return
 	}
 
 	var unmarshalled interface{}
-	err = json.Unmarshal(content, &unmarshalled)
+	err = unpack(content, &unmarshalled)
 	if err != nil {
 		return
 	}
 
 	convertedMap, converted := unmarshalled.(map[string]interface{})
 	if !converted {
-		return nil, fmt.Errorf("Incorrect JSON content in file %s", filename)
+		return nil, fmt.Errorf("Incorrect content in file %s", filename)
 	}
 
 	envs = make(map[string]string)
@@ -45,33 +46,12 @@ func configFormatJSONParser(filename string) (envs map[string]string, err error)
 	return
 }
 
-func configFormatYAMLParser(filename string) (envs map[string]string, err error) {
-	content, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return
-	}
+func configFormatJSONParser(filename string) (map[string]string, error) {
+	return configUnmarshall(json.Unmarshal, filename)
+}
 
-	var unmarshalled interface{}
-	err = yaml.Unmarshal(content, &unmarshalled)
-	if err != nil {
-		return
-	}
-
-	convertedMap, converted := unmarshalled.(map[string]interface{})
-	if !converted {
-		return nil, fmt.Errorf("Incorrect YAML content in file %s", filename)
-	}
-
-	envs = make(map[string]string)
-	for key, value := range convertedMap {
-		strValue, converted := value.(string)
-		if !converted {
-			return nil, fmt.Errorf("Cannot convert %v to string", value)
-		}
-		envs[key] = strValue
-	}
-
-	return
+func configFormatYAMLParser(filename string) (map[string]string, error) {
+	return configUnmarshall(yaml.Unmarshal, filename)
 }
 
 func configFormatINIParser(filename string) (envs map[string]string, err error) {
@@ -103,7 +83,7 @@ func configFormatEnvDirParser(dirname string) (envs map[string]string, err error
 		}
 
 		if item.Size() == 0 {
-			env[item.Name()] = ""
+			envs[item.Name()] = ""
 			continue
 		}
 
