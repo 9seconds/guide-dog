@@ -98,7 +98,12 @@ func configFormatEnvDirParser(dirname string) (envs map[string]string, err error
 
 	envs = make(map[string]string)
 	for _, item := range files {
-		if item.IsDir() || item.Size() == 0 {
+		if item.IsDir() {
+			continue
+		}
+
+		if item.Size() == 0 {
+			env[item.Name()] = ""
 			continue
 		}
 
