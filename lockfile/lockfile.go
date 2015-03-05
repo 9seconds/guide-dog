@@ -25,7 +25,7 @@ func (l *Lock) Acquire() (err error) {
 		return
 	}
 
-	err = syscall.Flock(file.Fd(), syscall.LOCK_EX|syscall.LOCK_NB)
+	err = syscall.Flock(int(file.Fd()), syscall.LOCK_EX|syscall.LOCK_NB)
 	if err != nil {
 		file.Close()
 		return
@@ -39,9 +39,11 @@ func (l *Lock) Acquire() (err error) {
 func (l *Lock) Release() error {
 	defer l.file.Close()
 
-	err = syscall.Flock(l.file.Fd(), syscall.LOCK_UN)
+	err := syscall.Flock(int(l.file.Fd()), syscall.LOCK_UN)
 	l.file.Close()
 	l.file = nil
+
+	return err
 }
 
 func NewLock(filename string) *Lock {

@@ -6,6 +6,7 @@ import (
 	"syscall"
 	"time"
 
+	lockfile "github.com/9seconds/guide-dog/lockfile"
 	log "github.com/Sirupsen/logrus"
 )
 
@@ -34,14 +35,14 @@ type Options struct {
 	Debug           bool
 	Envs            map[string]string
 	GracefulTimeout time.Duration
-	LockFile        string
+	LockFile        *lockfile.Lock
 	PTY             bool
 	Signal          syscall.Signal
 	Supervisor      SupervisorMode
 }
 
 func (opt *Options) String() string {
-	return fmt.Sprintf("<Options(configFormat='%v', configPath='%v', debug='%t', envs='%v', gracefulTimeout='%d', lockFile='%s', signal='%v', supervisor='%v')>",
+	return fmt.Sprintf("<Options(configFormat='%v', configPath='%v', debug='%t', envs='%v', gracefulTimeout='%d', lockFile='%v', signal='%v', supervisor='%v')>",
 		opt.ConfigFormat,
 		opt.ConfigPath,
 		opt.Debug,
@@ -110,13 +111,18 @@ func NewOptions(debug bool, signal string, envs []string,
 		}
 	}
 
+	var convertedLockFile *lockfile.Lock = nil
+	if lockFile != "" {
+		convertedLockFile = lockfile.NewLock(lockFile)
+	}
+
 	options = &Options{
 		ConfigFormat:    convertedConfigFormat,
 		ConfigPath:      configPath,
 		Debug:           debug,
 		Envs:            convertedEnvs,
 		GracefulTimeout: gracefulTimeout,
-		LockFile:        lockFile,
+		LockFile:        convertedLockFile,
 		PTY:             pty,
 		Signal:          convertedSignal,
 		Supervisor:      supervisorMode,

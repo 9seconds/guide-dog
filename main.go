@@ -92,7 +92,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	log.Infof("Environment is %v", env)
+	log.WithField("environment", env).Info("Environment")
 	env.Update()
 
 	log.Fatal(env.Parse())
