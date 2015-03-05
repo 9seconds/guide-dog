@@ -53,8 +53,7 @@ func (env *Environment) Update() (err error) {
 		if _, ok := variables[name]; !ok {
 			log.Debugf("Delete environment variable %s", name)
 			delete(env.previousUpdates, name)
-			// TODO: go 1.4
-			// os.Unsetenv(name)
+			os.Unsetenv(name)
 		}
 	}
 
