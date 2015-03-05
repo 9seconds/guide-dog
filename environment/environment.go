@@ -6,31 +6,30 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 
-	lockfile "github.com/9seconds/guide-dog/lockfile"
 	opts "github.com/9seconds/guide-dog/options"
 )
 
 type environmentParser func(string) (map[string]string, error)
 
 type Environment struct {
-	options         *opts.Options
+	Options         *opts.Options
 	parser          environmentParser
 	previousUpdates map[string]string
 }
 
 func (env *Environment) String() string {
-	return fmt.Sprintf("<Environment(options='%v', parser='%v', previousUpdates='%v')>",
-		env.options,
+	return fmt.Sprintf("<Environment(Options='%v', parser='%v', previousUpdates='%v')>",
+		env.Options,
 		env.parser,
 		env.previousUpdates,
 	)
 }
 
 func (env *Environment) Parse() (variables map[string]string, err error) {
-	variables, err = env.parser(env.options.ConfigPath)
+	variables, err = env.parser(env.Options.ConfigPath)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"configPath": env.options.ConfigPath,
+			"configPath": env.Options.ConfigPath,
 			"error":      err,
 		}).Warn("Cannot parse")
 	} else {
@@ -64,7 +63,7 @@ func (env *Environment) Update() (err error) {
 		}
 	}
 
-	for name, value := range env.options.Envs {
+	for name, value := range env.Options.Envs {
 		log.WithFields(log.Fields{
 			"name":  name,
 			"value": value,
@@ -75,17 +74,9 @@ func (env *Environment) Update() (err error) {
 	return
 }
 
-func (env *Environment) HasPTY() bool {
-	return env.options.PTY
-}
-
-func (env *Environment) LockFile() *lockfile.Lock {
-	return env.options.LockFile
-}
-
 func NewEnvironment(options *opts.Options) (env *Environment, err error) {
 	env = &Environment{
-		options:         options,
+		Options:         options,
 		parser:          getParser(options),
 		previousUpdates: make(map[string]string),
 	}
