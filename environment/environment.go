@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"os"
 
-	opts "github.com/9seconds/guide-dog/options"
 	log "github.com/Sirupsen/logrus"
+
+	lockfile "github.com/9seconds/guide-dog/lockfile"
+	opts "github.com/9seconds/guide-dog/options"
 )
 
 type environmentParser func(string) (map[string]string, error)
@@ -71,6 +73,14 @@ func (env *Environment) Update() (err error) {
 	}
 
 	return
+}
+
+func (env *Environment) HasPTY() bool {
+	return env.options.PTY
+}
+
+func (env *Environment) LockFile() *lockfile.Lock {
+	return env.options.LockFile
 }
 
 func NewEnvironment(options *opts.Options) (env *Environment, err error) {

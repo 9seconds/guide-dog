@@ -6,8 +6,9 @@ import (
 	"syscall"
 	"time"
 
-	lockfile "github.com/9seconds/guide-dog/lockfile"
 	log "github.com/Sirupsen/logrus"
+
+	lockfile "github.com/9seconds/guide-dog/lockfile"
 )
 
 type (
