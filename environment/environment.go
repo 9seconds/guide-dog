@@ -32,7 +32,7 @@ func (env *Environment) Parse() (variables map[string]string, err error) {
 		log.Debugf("Parsed environment variables are %v", variables)
 	}
 
-	return env.parser(env.options.ConfigPath)
+	return
 }
 
 func (env *Environment) Update() (err error) {
@@ -48,6 +48,7 @@ func (env *Environment) Update() (err error) {
 		env.previousUpdates[name] = value
 		os.Setenv(name, value)
 	}
+
 	for name, _ := range env.previousUpdates {
 		if _, ok := variables[name]; !ok {
 			log.Debugf("Delete environment variable %s", name)
@@ -55,6 +56,11 @@ func (env *Environment) Update() (err error) {
 			// TODO: go 1.4
 			// os.Unsetenv(name)
 		}
+	}
+
+	for name, value := range env.options.Envs {
+		log.Debugf("Set predefined environment variable %s to %s", name, value)
+		os.Setenv(name, value)
 	}
 
 	return

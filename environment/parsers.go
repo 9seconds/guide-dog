@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
@@ -18,45 +19,54 @@ func configFormatNoneParser(path string) (envs map[string]string, err error) {
 	return make(map[string]string), nil
 }
 
-func configUnmarshall(unpack unmarshal, filename string) (envs map[string]string, err error) {
+func configUnmarshall(convertFromFloat bool, unpack unmarshal,
+	filename string) (envs map[string]string, err error) {
 	content, err := ioutil.ReadFile(filename)
 	if err != nil {
 		log.Errorf("Cannot read from config file %s: %v", filename, err)
 		return
 	}
 
-	var unmarshalled interface{}
+	var unmarshalled map[string]interface{}
 	err = unpack(content, &unmarshalled)
 	if err != nil {
 		log.Errorf("Cannot unmarshal config file %s: %v", filename, err)
 		return
 	}
-
-	convertedMap, converted := unmarshalled.(map[string]interface{})
-	if !converted {
-		log.Errorf("Not supposed map format in file %s", filename)
-		return nil, fmt.Errorf("Incorrect content in file %s", filename)
-	}
+	log.Debugf("Unmarshalled structure %v", unmarshalled)
 
 	envs = make(map[string]string)
-	for key, value := range convertedMap {
-		strValue, converted := value.(string)
-		if !converted {
-			log.Errorf("Cannot convert %v to string", value)
-			return nil, fmt.Errorf("Cannot convert %v to string", value)
+	for key, value := range unmarshalled {
+		if strValue, ok := value.(string); ok {
+			envs[key] = strValue
+			continue
 		}
-		envs[key] = strValue
+
+		if convertFromFloat {
+			if floatValue, ok := value.(float64); ok {
+				envs[key] = strconv.Itoa(int(floatValue))
+				continue
+			}
+		}
+
+		if intValue, ok := value.(int); ok {
+			envs[key] = strconv.Itoa(intValue)
+			continue
+		}
+
+		log.Errorf("Cannot convert %v to string", value)
+		return nil, fmt.Errorf("Cannot convert %v to string", value)
 	}
 
 	return
 }
 
 func configFormatJSONParser(filename string) (map[string]string, error) {
-	return configUnmarshall(json.Unmarshal, filename)
+	return configUnmarshall(true, json.Unmarshal, filename)
 }
 
 func configFormatYAMLParser(filename string) (map[string]string, error) {
-	return configUnmarshall(yaml.Unmarshal, filename)
+	return configUnmarshall(false, yaml.Unmarshal, filename)
 }
 
 func configFormatINIParser(filename string) (envs map[string]string, err error) {

@@ -93,6 +93,8 @@ func main() {
 		panic(err)
 	}
 	log.Infof("Environment is %v", env)
+
+	log.Fatal(env.Parse())
 }
 
 func configureLogging(debug bool) {
