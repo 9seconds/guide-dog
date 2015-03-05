@@ -23,17 +23,23 @@ func configUnmarshall(convertFromFloat bool, unpack unmarshal,
 	filename string) (envs map[string]string, err error) {
 	content, err := ioutil.ReadFile(filename)
 	if err != nil {
-		log.Errorf("Cannot read from config file %s: %v", filename, err)
+		log.WithFields(log.Fields{
+			"filename": filename,
+			"error":    err,
+		}).Error("Cannot read from config file.")
 		return
 	}
 
 	var unmarshalled map[string]interface{}
 	err = unpack(content, &unmarshalled)
 	if err != nil {
-		log.Errorf("Cannot unmarshal config file %s: %v", filename, err)
+		log.WithFields(log.Fields{
+			"filename": filename,
+			"error":    err,
+		}).Error("Cannot parse config file")
 		return
 	}
-	log.Debugf("Unmarshalled structure %v", unmarshalled)
+	log.WithField("structure", unmarshalled).Debug("Unmarshalled structure.")
 
 	envs = make(map[string]string)
 	for key, value := range unmarshalled {
@@ -54,7 +60,7 @@ func configUnmarshall(convertFromFloat bool, unpack unmarshal,
 			continue
 		}
 
-		log.Errorf("Cannot convert %v to string", value)
+		log.WithField("value", value).Error("Cannot convert to string.")
 		return nil, fmt.Errorf("Cannot convert %v to string", value)
 	}
 
@@ -72,7 +78,10 @@ func configFormatYAMLParser(filename string) (map[string]string, error) {
 func configFormatINIParser(filename string) (envs map[string]string, err error) {
 	file, err := ini.LoadFile(filename)
 	if err != nil {
-		log.Errorf("Cannot read from config file %s: %v", filename, err)
+		log.WithFields(log.Fields{
+			"filename": filename,
+			"error":    err,
+		}).Error("Cannot read from config file.")
 		return
 	}
 
@@ -89,19 +98,28 @@ func configFormatINIParser(filename string) (envs map[string]string, err error) 
 func configFormatEnvDirParser(dirname string) (envs map[string]string, err error) {
 	files, err := ioutil.ReadDir(dirname)
 	if err != nil {
-		log.Errorf("Cannot read directory %s: %v", dirname, err)
+		log.WithFields(log.Fields{
+			"path":  dirname,
+			"error": err,
+		}).Error("Cannot list directory.")
 		return
 	}
 
 	envs = make(map[string]string)
 	for _, item := range files {
 		if item.IsDir() {
-			log.Debugf("%s is a directory, skip", item.Name())
+			log.WithFields(log.Fields{
+				"dirname": dirname,
+				"name":    item.Name(),
+			}).Debug("Skip directory.")
 			continue
 		}
 
 		if item.Size() == 0 {
-			log.Debugf("%s has 0 size, set %s to empty string", item.Name(), item.Name())
+			log.WithFields(log.Fields{
+				"dirname": dirname,
+				"name":    item.Name(),
+			}).Debug("Set to empty string because filesize is 0.")
 			envs[item.Name()] = ""
 			continue
 		}
@@ -109,7 +127,10 @@ func configFormatEnvDirParser(dirname string) (envs map[string]string, err error
 		path := filepath.Join(dirname, item.Name())
 		content, err := ioutil.ReadFile(path)
 		if err != nil {
-			log.Warnf("Cannot read file %s, skip: %v", path, err)
+			log.WithFields(log.Fields{
+				"dirname": dirname,
+				"name":    item.Name(),
+			}).Warn("Cannot read file, skip.")
 			continue
 		}
 

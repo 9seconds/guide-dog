@@ -63,7 +63,7 @@ var (
 func main() {
 	defer func() {
 		if exc := recover(); exc != nil {
-			log.Fatalf("Fatal error %v happened", exc)
+			log.WithField("err", exc).Fatal("Fatal error happened.")
 			os.Exit(ENV_DIR_EXIT_CODE)
 		}
 	}()
@@ -92,7 +92,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	log.WithField("environment", env).Info("Environment")
+	log.WithField("environment", env).Info("Environment.")
 	env.Update()
 
 	log.Fatal(env.Parse())

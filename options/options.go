@@ -90,13 +90,19 @@ func NewOptions(debug bool, signal string, envs []string,
 	restartOnConfigChanges bool) (options *Options, err error) {
 	convertedConfigFormat, err := parseConfigFormat(configFormat)
 	if err != nil {
-		log.Errorf("Cannot convert configFormat '%v'", err)
+		log.WithFields(log.Fields{
+			"configFormat": configFormat,
+			"error":        err,
+		}).Errorf("Cannot convert configFormat.")
 		return
 	}
 
 	convertedSignal, err := parseSignalName(signal)
 	if err != nil {
-		log.Errorf("Cannot convert signal '%v'", err)
+		log.WithFields(log.Fields{
+			"signal": signal,
+			"error":  err,
+		}).Errorf("Cannot convert signal.")
 		return
 	}
 

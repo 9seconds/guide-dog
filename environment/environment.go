@@ -27,9 +27,12 @@ func (env *Environment) String() string {
 func (env *Environment) Parse() (variables map[string]string, err error) {
 	variables, err = env.parser(env.options.ConfigPath)
 	if err != nil {
-		log.Warnf("Cannot parse %s: %v", env.options.ConfigPath, err)
+		log.WithFields(log.Fields{
+			"configPath": env.options.ConfigPath,
+			"error":      err,
+		}).Warn("Cannot parse")
 	} else {
-		log.Debugf("Parsed environment variables are %v", variables)
+		log.WithField("variables", variables).Info("Parsed environment variables.")
 	}
 
 	return
@@ -38,12 +41,14 @@ func (env *Environment) Parse() (variables map[string]string, err error) {
 func (env *Environment) Update() (err error) {
 	variables, err := env.Parse()
 	if err != nil {
-		log.Warnf("Cannot parse environment variables, skip: %v", err)
 		return
 	}
 
 	for name, value := range variables {
-		log.Debugf("Set environment variable %s to %s", name, value)
+		log.WithFields(log.Fields{
+			"name":  name,
+			"value": value,
+		}).Debug("Set environment variable.")
 
 		env.previousUpdates[name] = value
 		os.Setenv(name, value)
@@ -51,14 +56,17 @@ func (env *Environment) Update() (err error) {
 
 	for name, _ := range env.previousUpdates {
 		if _, ok := variables[name]; !ok {
-			log.Debugf("Delete environment variable %s", name)
+			log.WithField("name", name).Debug("Delete environment variable.")
 			delete(env.previousUpdates, name)
 			os.Unsetenv(name)
 		}
 	}
 
 	for name, value := range env.options.Envs {
-		log.Debugf("Set predefined environment variable %s to %s", name, value)
+		log.WithFields(log.Fields{
+			"name":  name,
+			"value": value,
+		}).Debug("Set predefined environment variable.")
 		os.Setenv(name, value)
 	}
 
