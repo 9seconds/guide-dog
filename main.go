@@ -1,14 +1,16 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
+	log "github.com/Sirupsen/logrus"
 	kingpin "gopkg.in/alecthomas/kingpin.v1"
 
 	environment "github.com/9seconds/guide-dog/environment"
 	options "github.com/9seconds/guide-dog/options"
 )
+
+const ENV_DIR_EXIT_CODE = 111
 
 var (
 	cmdLine = kingpin.New("guide-dog", "Small supervisor with envdir possibilities.")
@@ -43,6 +45,9 @@ var (
 			Flag("lock-file", "Lockfile on the local machine to acquire.").
 			Short('l').
 			String()
+	pty = cmdLine.
+		Flag("pty", "Allocate pseudo-terminal.").
+		Bool()
 	supervise = cmdLine.
 			Flag("supervise", "Set if it is required to supervise command. By default no supervising is performed.").
 			Bool()
@@ -56,7 +61,16 @@ var (
 )
 
 func main() {
+	defer func() {
+		if exc := recover(); exc != nil {
+			log.Fatalf("Fatal error %v happened", exc)
+			os.Exit(ENV_DIR_EXIT_CODE)
+		}
+	}()
+
 	kingpin.MustParse(cmdLine.Parse(os.Args[1:]))
+
+	configureLogging(*debug)
 
 	parsedOptions, err := options.NewOptions(
 		*debug,
@@ -66,6 +80,7 @@ func main() {
 		*configFormat,
 		*configPath,
 		*lockFile,
+		*pty,
 		*supervise,
 		*superviseRestartOnConfigPathChanges,
 	)
@@ -74,6 +89,19 @@ func main() {
 	}
 
 	env, err := environment.NewEnvironment(parsedOptions)
+	if err != nil {
+		panic(err)
+	}
+	log.Infof("Environment is %v", env)
+}
 
-	fmt.Println(env)
+func configureLogging(debug bool) {
+	log.SetOutput(os.Stderr)
+	log.SetFormatter(&log.TextFormatter{})
+
+	if debug {
+		log.SetLevel(log.DebugLevel)
+	} else {
+		log.SetLevel(log.FatalLevel)
+	}
 }

@@ -5,6 +5,8 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 type (
@@ -33,21 +35,67 @@ type Options struct {
 	Envs            map[string]string
 	GracefulTimeout time.Duration
 	LockFile        string
+	PTY             bool
 	Signal          syscall.Signal
 	Supervisor      SupervisorMode
 }
 
+func (opt *Options) String() string {
+	return fmt.Sprintf("<Options(configFormat='%v', configPath='%v', debug='%t', envs='%v', gracefulTimeout='%d', lockFile='%s', signal='%v', supervisor='%v')>",
+		opt.ConfigFormat,
+		opt.ConfigPath,
+		opt.Debug,
+		opt.Envs,
+		opt.GracefulTimeout,
+		opt.LockFile,
+		opt.Signal,
+		opt.Supervisor,
+	)
+}
+
+func (sm SupervisorMode) String() string {
+	switch sm {
+	case SUPERVISOR_MODE_NONE:
+		return "none"
+	case SUPERVISOR_MODE_SIMPLE:
+		return "simple"
+	case SUPERVISOR_MODE_RESTARTING:
+		return "restarting"
+	default:
+		return "ERROR"
+	}
+}
+
+func (cf ConfigFormat) String() string {
+	switch cf {
+	case CONFIG_FORMAT_NONE:
+		return "none"
+	case CONFIG_FORMAT_JSON:
+		return "json"
+	case CONFIG_FORMAT_YAML:
+		return "yaml"
+	case CONFIG_FORMAT_INI:
+		return "ini"
+	case CONFIG_FORMAT_ENVDIR:
+		return "envdir"
+	default:
+		return "ERROR"
+	}
+}
+
 func NewOptions(debug bool, signal string, envs []string,
 	gracefulTimeout time.Duration, configFormat string,
-	configPath string, lockFile string, supervise bool,
+	configPath string, lockFile string, pty bool, supervise bool,
 	restartOnConfigChanges bool) (options *Options, err error) {
 	convertedConfigFormat, err := parseConfigFormat(configFormat)
 	if err != nil {
+		log.Errorf("Cannot convert configFormat '%v'", err)
 		return
 	}
 
 	convertedSignal, err := parseSignalName(signal)
 	if err != nil {
+		log.Errorf("Cannot convert signal '%v'", err)
 		return
 	}
 
@@ -69,6 +117,7 @@ func NewOptions(debug bool, signal string, envs []string,
 		Envs:            convertedEnvs,
 		GracefulTimeout: gracefulTimeout,
 		LockFile:        lockFile,
+		PTY:             pty,
 		Signal:          convertedSignal,
 		Supervisor:      supervisorMode,
 	}

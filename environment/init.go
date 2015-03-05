@@ -1,9 +1,11 @@
 package environment
 
 import (
+	"fmt"
 	"os"
 
 	opts "github.com/9seconds/guide-dog/options"
+	log "github.com/Sirupsen/logrus"
 )
 
 type environmentParser func(string) (map[string]string, error)
@@ -14,22 +16,41 @@ type Environment struct {
 	previousUpdates map[string]string
 }
 
-func (env *Environment) Parse() (map[string]string, error) {
+func (env *Environment) String() string {
+	return fmt.Sprintf("<Environment(options='%v', parser='%v', previousUpdates='%v')>",
+		env.options,
+		env.parser,
+		env.previousUpdates,
+	)
+}
+
+func (env *Environment) Parse() (variables map[string]string, err error) {
+	variables, err = env.parser(env.options.ConfigPath)
+	if err != nil {
+		log.Warnf("Cannot parse %s: %v", env.options.ConfigPath, err)
+	} else {
+		log.Debugf("Parsed environment variables are %v", variables)
+	}
+
 	return env.parser(env.options.ConfigPath)
 }
 
 func (env *Environment) Update() (err error) {
 	variables, err := env.Parse()
 	if err != nil {
+		log.Warnf("Cannot parse environment variables, skip: %v", err)
 		return
 	}
 
 	for name, value := range variables {
+		log.Debugf("Set environment variable %s to %s", name, value)
+
 		env.previousUpdates[name] = value
 		os.Setenv(name, value)
 	}
 	for name, _ := range env.previousUpdates {
 		if _, ok := variables[name]; !ok {
+			log.Debugf("Delete environment variable %s", name)
 			delete(env.previousUpdates, name)
 			// TODO: go 1.4
 			// os.Unsetenv(name)
