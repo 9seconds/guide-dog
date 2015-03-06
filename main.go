@@ -2,14 +2,12 @@ package main
 
 import (
 	"os"
-	"os/signal"
-	"syscall"
 
 	log "github.com/Sirupsen/logrus"
 	kingpin "gopkg.in/alecthomas/kingpin.v1"
-	fsnotify "gopkg.in/fsnotify.v1"
 
 	environment "github.com/9seconds/guide-dog/environment"
+	execution "github.com/9seconds/guide-dog/execution"
 	options "github.com/9seconds/guide-dog/options"
 )
 
@@ -98,7 +96,7 @@ func main() {
 	log.WithField("environment", env).Info("Environment.")
 
 	if len(*commandToExecute) > 0 {
-		exitCode := execute(*commandToExecute, env)
+		exitCode := execution.Execute(*commandToExecute, env)
 		log.WithField("exitCode", exitCode).Info("Program exit")
 		os.Exit(exitCode)
 	}
@@ -113,80 +111,4 @@ func configureLogging(debug bool) {
 	} else {
 		log.SetLevel(log.FatalLevel)
 	}
-}
-
-func execute(commandToExecute []string, env *environment.Environment) int {
-	exitCodeChannel := make(chan int, 1)
-
-	watcher, watcherChannel := makeWatcher(env.Options.ConfigPath)
-	defer close(watcherChannel)
-	defer watcher.Close()
-
-	log.Info(len(watcherChannel))
-
-	<-exitCodeChannel
-
-	return 0
-}
-
-func makeWatcher(configPath string) (watcher *fsnotify.Watcher, channel chan bool) {
-	channel = make(chan bool, 1)
-
-	watcher, err := fsnotify.NewWatcher()
-	if err != nil {
-		panic(err)
-	}
-
-	if configPath == "" {
-		return
-	}
-
-	err = watcher.Add(configPath)
-	if err != nil {
-		panic(err)
-	}
-
-	go func() {
-		for {
-			select {
-			case event := <-watcher.Events:
-				if event.Op == 0 {
-					continue
-				}
-
-				log.WithFields(log.Fields{
-					"event": event,
-					"op":    event.Op,
-				}).Info("Event from filesystem is coming")
-
-				if len(channel) == 0 {
-					channel <- true
-				}
-			case err := <-watcher.Errors:
-				if err != nil {
-					log.WithField("error", err).Error("Some problem with filesystem notifications")
-				}
-			}
-		}
-	}()
-
-	return
-}
-
-func makeSignalChannel() (channel chan os.Signal) {
-	channel = make(chan os.Signal, 1)
-
-	signal.Notify(channel,
-		syscall.SIGTERM,
-		syscall.SIGINT,
-		syscall.SIGQUIT,
-		syscall.SIGTSTP,
-		syscall.SIGCONT,
-		syscall.SIGTTIN,
-		syscall.SIGTTOU,
-		syscall.SIGBUS,
-		syscall.SIGSEGV,
-	)
-
-	return channel
 }
