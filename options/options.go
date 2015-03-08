@@ -37,15 +37,17 @@ type Options struct {
 	Envs            map[string]string
 	GracefulTimeout time.Duration
 	LockFile        *lockfile.Lock
+	PathsToTrack    []string
 	PTY             bool
 	Signal          syscall.Signal
 	Supervisor      SupervisorMode
 }
 
 func (opt *Options) String() string {
-	return fmt.Sprintf("<Options(configFormat='%v', configPath='%v', debug='%t', envs='%v', gracefulTimeout='%d', lockFile='%v', signal='%v', supervisor='%v')>",
+	return fmt.Sprintf("<Options(configFormat='%v', configPath='%v', pathsToTrack='%v', debug='%t', envs='%v', gracefulTimeout='%d', lockFile='%v', signal='%v', supervisor='%v')>",
 		opt.ConfigFormat,
 		opt.ConfigPath,
+		opt.PathsToTrack,
 		opt.Debug,
 		opt.Envs,
 		opt.GracefulTimeout,
@@ -87,8 +89,8 @@ func (cf ConfigFormat) String() string {
 
 func NewOptions(debug bool, signal string, envs []string,
 	gracefulTimeout time.Duration, configFormat string,
-	configPath string, lockFile string, pty bool, supervise bool,
-	restartOnConfigChanges bool) (options *Options, err error) {
+	configPath string, pathsToTrack []string, lockFile string,
+	pty bool, supervise bool, restartOnConfigChanges bool) (options *Options, err error) {
 	convertedConfigFormat, err := parseConfigFormat(configFormat)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -130,6 +132,7 @@ func NewOptions(debug bool, signal string, envs []string,
 		Envs:            convertedEnvs,
 		GracefulTimeout: gracefulTimeout,
 		LockFile:        convertedLockFile,
+		PathsToTrack:    pathsToTrack,
 		PTY:             pty,
 		Signal:          convertedSignal,
 		Supervisor:      supervisorMode,

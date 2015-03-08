@@ -36,12 +36,16 @@ var (
 			Duration()
 	configFormat = cmdLine.
 			Flag("config-format", "Format of configs.").
-			Short('f').
+			Short('c').
 			String()
 	configPath = cmdLine.
 			Flag("config-path", "Config path.").
-			Short('p').
+			Short('f').
 			String()
+	pathsToTrack = cmdLine.
+			Flag("path-to-track", "Paths to track.").
+			Short('t').
+			Strings()
 	lockFile = cmdLine.
 			Flag("lock-file", "Lockfile on the local machine to acquire.").
 			Short('l').
@@ -80,6 +84,7 @@ func main() {
 		*gracefulTimeout,
 		*configFormat,
 		*configPath,
+		*pathsToTrack,
 		*lockFile,
 		*pty,
 		*supervise,

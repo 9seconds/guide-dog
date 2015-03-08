@@ -5,7 +5,7 @@ import (
 	fsnotify "gopkg.in/fsnotify.v1"
 )
 
-func makeWatcher(configPath string) (watcher *fsnotify.Watcher, channel chan bool) {
+func makeWatcher(paths []string) (watcher *fsnotify.Watcher, channel chan bool) {
 	channel = make(chan bool, 1)
 
 	watcher, err := fsnotify.NewWatcher()
@@ -13,13 +13,22 @@ func makeWatcher(configPath string) (watcher *fsnotify.Watcher, channel chan boo
 		panic(err)
 	}
 
-	if configPath == "" {
+	trackPaths := make([]string, 0, len(paths))
+	for _, value := range paths {
+		if value != "" {
+			trackPaths = append(trackPaths, value)
+		}
+	}
+
+	if len(trackPaths) == 0 {
 		return
 	}
 
-	err = watcher.Add(configPath)
-	if err != nil {
-		panic(err)
+	for _, path := range trackPaths {
+		err = watcher.Add(path)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	go func() {

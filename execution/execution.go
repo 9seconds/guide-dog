@@ -7,7 +7,7 @@ import (
 func Execute(command []string, env *environment.Environment) int {
 	exitCodeChannel := make(chan int, 1)
 
-	watcher, watcherChannel := makeWatcher(env.Options.ConfigPath)
+	watcher, watcherChannel := makeWatcher([]string{env.Options.ConfigPath})
 	defer close(watcherChannel)
 	defer watcher.Close()
 
