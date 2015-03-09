@@ -5,7 +5,7 @@ import (
 	fsnotify "gopkg.in/fsnotify.v1"
 )
 
-func makeWatcher(paths []string) (watcher *fsnotify.Watcher, channel chan bool) {
+func makeWatcher(paths []string) (channel chan bool) {
 	channel = make(chan bool, 1)
 
 	watcher, err := fsnotify.NewWatcher()
@@ -25,13 +25,19 @@ func makeWatcher(paths []string) (watcher *fsnotify.Watcher, channel chan bool) 
 	}
 
 	for _, path := range trackPaths {
+		log.WithField("path", path).Info("Add path")
 		err = watcher.Add(path)
 		if err != nil {
-			panic(err)
+			log.WithFields(log.Fields{
+				"path":  path,
+				"error": err,
+			}).Warn("Cannot add path")
 		}
 	}
 
 	go func() {
+		defer watcher.Close()
+
 		for {
 			select {
 			case event, ok := <-watcher.Events:
@@ -51,11 +57,7 @@ func makeWatcher(paths []string) (watcher *fsnotify.Watcher, channel chan bool) 
 				if len(channel) == 0 {
 					channel <- true
 				}
-			case err, ok := <-watcher.Errors:
-				if !ok {
-					return
-				}
-
+			case err := <-watcher.Errors:
 				if err != nil {
 					log.WithField("error", err).Error("Some problem with filesystem notifications")
 				}

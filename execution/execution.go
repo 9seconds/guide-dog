@@ -5,11 +5,16 @@ import (
 )
 
 func Execute(command []string, env *environment.Environment) int {
-	exitCodeChannel := make(chan int, 1)
+	pathsToWatch := []string{env.Options.ConfigPath}
+	for _, path := range env.Options.PathsToTrack {
+		pathsToWatch = append(pathsToWatch, path)
+	}
 
-	watcher, watcherChannel := makeWatcher([]string{env.Options.ConfigPath})
+	watcherChannel := makeWatcher(pathsToWatch)
 	defer close(watcherChannel)
-	defer watcher.Close()
+
+	exitCodeChannel := make(chan int, 1)
+	defer close(exitCodeChannel)
 
 	return <-exitCodeChannel
 }
