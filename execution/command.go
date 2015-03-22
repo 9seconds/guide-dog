@@ -11,9 +11,7 @@ import (
 )
 
 type Command struct {
-	cmd             *exec.Cmd
-	gracefulSignal  os.Signal
-	gracefulTimeout time.Duration
+	cmd *exec.Cmd
 }
 
 const (
@@ -22,17 +20,13 @@ const (
 )
 
 func (c *Command) String() string {
-	return fmt.Sprintf("<Command(command='%v' (%v), gracefulSignal='%v', gracefulTimeout='%v')>",
+	return fmt.Sprintf("<Command(command='%v' (%v))>",
 		c.cmd.Args,
-		c.cmd,
-		c.gracefulSignal,
-		c.gracefulTimeout,
-	)
+		c.cmd)
 }
 
 func (c *Command) Stopped() bool {
 	return c.cmd.ProcessState != nil && c.cmd.ProcessState.Exited()
-
 }
 
 func (c *Command) ExitCode() int {
@@ -50,15 +44,19 @@ func (c *Command) ExitCode() int {
 	return waitStatus.ExitStatus()
 }
 
-func (c *Command) Run() {
+func (c *Command) Start() {
 	c.cmd.Start()
 }
 
-func (c *Command) Stop() int {
-	gracefulTimerChannel := time.Tick(2 * time.Millisecond)
-	killTimerChannel := time.After(c.gracefulTimeout)
+func (c *Command) Stop(signal os.Signal, timeout time.Duration) {
+	if c.Stopped() {
+		return
+	}
 
-	c.cmd.Process.Signal(c.gracefulSignal)
+	gracefulTimerChannel := time.Tick(2 * time.Millisecond)
+	killTimerChannel := time.After(timeout)
+
+	c.cmd.Process.Signal(signal)
 	defer c.cmd.Process.Release()
 
 	for {
@@ -76,15 +74,12 @@ func (c *Command) Stop() int {
 			}
 		}
 	}
-
-	return c.ExitCode()
 }
 
-func NewCommand(commandToExecute []string, gracefulSignal os.Signal,
-	gracefulTimeout time.Duration, hasTTY bool) *Command {
-	return &Command{
-		cmd:             exec.Command(commandToExecute[0], commandToExecute[1:]...),
-		gracefulSignal:  gracefulSignal,
-		gracefulTimeout: gracefulTimeout,
+func NewCommand(commandToExecute []string, hasTTY bool) (cmd *Command) {
+	cmd = &Command{
+		cmd: exec.Command(commandToExecute[0], commandToExecute[1:]...),
 	}
+
+	return
 }

@@ -3,9 +3,11 @@ package execution
 import (
 	log "github.com/Sirupsen/logrus"
 	fsnotify "gopkg.in/fsnotify.v1"
+
+	environment "github.com/9seconds/guide-dog/environment"
 )
 
-func makeWatcher(paths []string) (channel chan bool) {
+func makeWatcher(paths []string, env *environment.Environment) (channel chan bool) {
 	channel = make(chan bool, 1)
 
 	watcher, err := fsnotify.NewWatcher()
@@ -53,6 +55,10 @@ func makeWatcher(paths []string) (channel chan bool) {
 					"event": event,
 					"op":    event.Op,
 				}).Info("Event from filesystem is coming")
+
+				if env.Options.ConfigPath != "" {
+					env.Update()
+				}
 
 				if len(channel) == 0 {
 					channel <- true
