@@ -14,6 +14,8 @@ type SupervisorAction uint8
 const (
 	SUPERVISOR_STOP SupervisorAction = iota
 	SUPERVISOR_RESTART
+
+	SUPERVISOR_TIMEOUT = 5 * time.Millisecond
 )
 
 type Supervisor struct {
@@ -52,22 +54,9 @@ func (s *Supervisor) Start() {
 	s.exit = false
 	if s.restartOnFailures {
 		go s.keepAlive()
+	} else {
+		go s.getExitCode()
 	}
-}
-
-func (s *Supervisor) keepAlive() {
-	s.keepAlivers.Add(1)
-	defer s.keepAlivers.Done()
-
-	log.Debug("Start keepAlive.")
-	for !s.exit {
-		if s.stopped() {
-			log.Debug("Process is stopped, restarting.")
-			s.supervisorChannel <- SUPERVISOR_RESTART
-		}
-		time.Sleep(20 * time.Millisecond)
-	}
-	log.Debug("Finish keepAlive.")
 }
 
 func (s *Supervisor) Signal(event SupervisorAction) {
@@ -82,25 +71,53 @@ func (s *Supervisor) Signal(event SupervisorAction) {
 }
 
 func (s *Supervisor) stopped() bool {
-	return s.cmd != nil && s.cmd.Stopped()
+	if s.cmd == nil {
+		return true
+	}
+	return s.cmd.Stopped()
 }
 
 func (s *Supervisor) stop() {
+	s.exit = true
+	s.keepAlivers.Wait()
+
 	if !s.stopped() {
-		s.exit = true
-		s.keepAlivers.Wait()
 		s.cmd.Stop(s.gracefulSignal, s.gracefulTimeout)
+	}
+}
+
+func (s *Supervisor) keepAlive() {
+	s.keepAlivers.Add(1)
+
+	for !s.exit {
+		if s.stopped() {
+			log.Debug("Process is stopped, restarting.")
+			s.supervisorChannel <- SUPERVISOR_RESTART
+		}
+		time.Sleep(SUPERVISOR_TIMEOUT)
+	}
+
+	s.keepAlivers.Done()
+}
+
+func (s *Supervisor) getExitCode() {
+	for {
+		if s.stopped() {
+			s.exitCodeChannel <- s.cmd.ExitCode()
+		}
+		time.Sleep(SUPERVISOR_TIMEOUT)
 	}
 }
 
 func NewSupervisor(command []string, exitCodeChannel chan int, gracefulSignal os.Signal, gracefulTimeout time.Duration, hasTTY bool, restartOnFailures bool, supervisorChannel chan SupervisorAction) *Supervisor {
 	return &Supervisor{
 		command:           command,
-		exit:              false,
 		exitCodeChannel:   exitCodeChannel,
+		exit:              false,
 		gracefulSignal:    gracefulSignal,
 		gracefulTimeout:   gracefulTimeout,
 		hasTTY:            hasTTY,
-		supervisorChannel: supervisorChannel,
-		keepAlivers:       new(sync.WaitGroup)}
+		keepAlivers:       new(sync.WaitGroup),
+		restartOnFailures: restartOnFailures,
+		supervisorChannel: supervisorChannel}
 }

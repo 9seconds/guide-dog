@@ -29,9 +29,9 @@ func Execute(command []string, env *environment.Environment) int {
 	signalChannel := makeSignalChannel()
 	defer close(signalChannel)
 
-	attachSignalChannel(supervisorChannel, signalChannel)
+	go attachSignalChannel(supervisorChannel, signalChannel)
 	if env.Options.Supervisor == options.SUPERVISOR_MODE_RESTARTING {
-		attachSupervisorChannel(supervisorChannel, watcherChannel)
+		go attachSupervisorChannel(supervisorChannel, watcherChannel)
 	}
 
 	supervisor := NewSupervisor(command,
@@ -39,8 +39,12 @@ func Execute(command []string, env *environment.Environment) int {
 		env.Options.Signal,
 		env.Options.GracefulTimeout,
 		env.Options.PTY,
-		env.Options.Supervisor != options.SUPERVISOR_MODE_NONE,
+		env.Options.Supervisor&options.SUPERVISOR_MODE_NONE == options.SUPERVISOR_MODE_SIMPLE,
 		supervisorChannel)
+	log.Debug(supervisor)
+	log.Debug(env.Options.Supervisor)
+	log.Debug(options.SUPERVISOR_MODE_NONE)
+	log.Debug(env.Options.Supervisor != options.SUPERVISOR_MODE_NONE)
 
 	supervisor.Start()
 	go func() {
@@ -57,24 +61,28 @@ func Execute(command []string, env *environment.Environment) int {
 }
 
 func attachSignalChannel(channel chan SupervisorAction, signalChannel chan os.Signal) {
-	go func() {
-		for incomingSignal := range signalChannel {
-			log.WithField("signal", incomingSignal).Debug("Signal from OS received.")
-			channel <- SUPERVISOR_STOP
+	for {
+		incomingSignal, ok := <-signalChannel
+		if !ok {
+			return
 		}
-	}()
+		log.WithField("signal", incomingSignal).Debug("Signal from OS received.")
+		channel <- SUPERVISOR_STOP
+	}
 }
 
 func attachSupervisorChannel(channel chan SupervisorAction, supervisorChannel chan bool) {
-	go func() {
-		for event := range supervisorChannel {
-			log.WithFields(log.Fields{
-				"event":   event,
-				"channel": supervisorChannel,
-			}).Debug("Event from supervisor channel is captured.")
-			channel <- SUPERVISOR_RESTART
+	for {
+		event, ok := <-supervisorChannel
+		if !ok {
+			return
 		}
-	}()
+		log.WithFields(log.Fields{
+			"event":   event,
+			"channel": supervisorChannel,
+		}).Debug("Event from supervisor channel is captured.")
+		channel <- SUPERVISOR_RESTART
+	}
 }
 
 func makeSignalChannel() (channel chan os.Signal) {

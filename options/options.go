@@ -25,7 +25,7 @@ const (
 )
 
 const (
-	SUPERVISOR_MODE_NONE SupervisorMode = iota
+	SUPERVISOR_MODE_NONE SupervisorMode = 1 << iota
 	SUPERVISOR_MODE_SIMPLE
 	SUPERVISOR_MODE_RESTARTING
 )
@@ -113,11 +113,10 @@ func NewOptions(debug bool, signal string, envs []string,
 
 	supervisorMode := SUPERVISOR_MODE_NONE
 	if supervise {
-		if restartOnConfigChanges {
-			supervisorMode = SUPERVISOR_MODE_RESTARTING
-		} else {
-			supervisorMode = SUPERVISOR_MODE_SIMPLE
-		}
+		supervisorMode &= SUPERVISOR_MODE_SIMPLE
+	}
+	if restartOnConfigChanges {
+		supervisorMode &= SUPERVISOR_MODE_RESTARTING
 	}
 
 	var convertedLockFile *lockfile.Lock = nil

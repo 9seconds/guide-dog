@@ -15,8 +15,13 @@ type Command struct {
 }
 
 const (
-	COMMAND_STILL_RUNNING     = -1
-	COMMAND_UNKNOWN_EXIT_CODE = 70
+	COMMAND_STILL_RUNNING       = -1
+	COMMAND_INTERRUPT_EXIT_CODE = 130
+	COMMAND_UNKNOWN_EXIT_CODE   = 70
+)
+
+var (
+	aliveSignal = syscall.Signal(0)
 )
 
 func (c *Command) String() string {
@@ -26,7 +31,7 @@ func (c *Command) String() string {
 }
 
 func (c *Command) Stopped() bool {
-	return c.cmd.ProcessState != nil && c.cmd.ProcessState.Exited()
+	return c.cmd.ProcessState != nil
 }
 
 func (c *Command) ExitCode() int {
@@ -41,11 +46,16 @@ func (c *Command) ExitCode() int {
 		return COMMAND_UNKNOWN_EXIT_CODE
 	}
 
-	return waitStatus.ExitStatus()
+	exitCode := waitStatus.ExitStatus()
+	if exitCode < 0 {
+		exitCode = COMMAND_INTERRUPT_EXIT_CODE
+	}
+
+	return exitCode
 }
 
 func (c *Command) Start() {
-	c.cmd.Start()
+	go c.cmd.Run()
 }
 
 func (c *Command) Stop(signal os.Signal, timeout time.Duration) {
@@ -57,7 +67,6 @@ func (c *Command) Stop(signal os.Signal, timeout time.Duration) {
 	killTimerChannel := time.After(timeout)
 
 	c.cmd.Process.Signal(signal)
-	defer c.cmd.Process.Release()
 
 	for {
 		select {
@@ -70,7 +79,7 @@ func (c *Command) Stop(signal os.Signal, timeout time.Duration) {
 				break
 			} else {
 				log.Info("Graceful timeout expired, send kill signal")
-				c.cmd.Process.Kill()
+				c.cmd.Process.Signal(syscall.SIGKILL)
 			}
 		}
 	}
