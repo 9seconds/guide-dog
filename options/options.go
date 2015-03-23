@@ -58,16 +58,22 @@ func (opt *Options) String() string {
 }
 
 func (sm SupervisorMode) String() string {
-	switch sm {
-	case SUPERVISOR_MODE_NONE:
-		return "none"
-	case SUPERVISOR_MODE_SIMPLE:
-		return "simple"
-	case SUPERVISOR_MODE_RESTARTING:
-		return "restarting"
-	default:
-		return "ERROR"
+	mode := make([]string, 0, 2)
+	log.Debugf("sm %v", int(sm))
+	log.Debugf("NONE %v, SIMPLE %v, RESTARTING %v", int(SUPERVISOR_MODE_NONE), int(SUPERVISOR_MODE_SIMPLE), int(SUPERVISOR_MODE_RESTARTING))
+
+	if sm == SUPERVISOR_MODE_NONE {
+		mode = append(mode, "none")
+	} else {
+		if sm&SUPERVISOR_MODE_SIMPLE > 0 {
+			mode = append(mode, "simple")
+		}
+		if sm&SUPERVISOR_MODE_RESTARTING > 0 {
+			mode = append(mode, "restarting")
+		}
 	}
+
+	return strings.Join(mode, " / ")
 }
 
 func (cf ConfigFormat) String() string {
@@ -113,10 +119,10 @@ func NewOptions(debug bool, signal string, envs []string,
 
 	supervisorMode := SUPERVISOR_MODE_NONE
 	if supervise {
-		supervisorMode &= SUPERVISOR_MODE_SIMPLE
+		supervisorMode |= SUPERVISOR_MODE_SIMPLE
 	}
 	if restartOnConfigChanges {
-		supervisorMode &= SUPERVISOR_MODE_RESTARTING
+		supervisorMode |= SUPERVISOR_MODE_RESTARTING
 	}
 
 	var convertedLockFile *lockfile.Lock = nil

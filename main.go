@@ -53,13 +53,16 @@ var (
 	pty = cmdLine.
 		Flag("pty", "Allocate pseudo-terminal.").
 		Bool()
+	runInShell = cmdLine.
+			Flag("run-in-shell", "Run command in shell.").
+			Short('x').
+			Bool()
 	supervise = cmdLine.
 			Flag("supervise", "Set if it is required to supervise command. By default no supervising is performed.").
 			Bool()
 	superviseRestartOnConfigPathChanges = cmdLine.
 						Flag("restart-on-config-changes", "Do the restart of the process if config is changed. Works only if 'supervise' option is enabled.").
 						Bool()
-
 	commandToExecute = cmdLine.
 				Arg("command", "Command which has to be executed.").
 				Strings()
@@ -88,8 +91,7 @@ func main() {
 		*lockFile,
 		*pty,
 		*supervise,
-		*superviseRestartOnConfigPathChanges,
-	)
+		*superviseRestartOnConfigPathChanges)
 	if err != nil {
 		panic(err)
 	}

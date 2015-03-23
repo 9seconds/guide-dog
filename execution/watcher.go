@@ -56,9 +56,7 @@ func makeWatcher(paths []string, env *environment.Environment) (channel chan boo
 					"op":    event.Op,
 				}).Info("Event from filesystem is coming")
 
-				if env.Options.ConfigPath != "" {
-					env.Update()
-				}
+				env.Update()
 
 				if len(channel) == 0 {
 					channel <- true

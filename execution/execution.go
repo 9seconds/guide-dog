@@ -39,12 +39,10 @@ func Execute(command []string, env *environment.Environment) int {
 		env.Options.Signal,
 		env.Options.GracefulTimeout,
 		env.Options.PTY,
-		env.Options.Supervisor&options.SUPERVISOR_MODE_NONE == options.SUPERVISOR_MODE_SIMPLE,
+		env.Options.Supervisor&options.SUPERVISOR_MODE_SIMPLE > 0,
 		supervisorChannel)
-	log.Debug(supervisor)
-	log.Debug(env.Options.Supervisor)
-	log.Debug(options.SUPERVISOR_MODE_NONE)
-	log.Debug(env.Options.Supervisor != options.SUPERVISOR_MODE_NONE)
+
+	log.WithField("supervisor", supervisor).Info("Start supervisor.")
 
 	supervisor.Start()
 	go func() {

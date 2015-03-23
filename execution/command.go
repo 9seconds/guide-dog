@@ -18,10 +18,8 @@ const (
 	COMMAND_STILL_RUNNING       = -1
 	COMMAND_INTERRUPT_EXIT_CODE = 130
 	COMMAND_UNKNOWN_EXIT_CODE   = 70
-)
 
-var (
-	aliveSignal = syscall.Signal(0)
+	GRACEFUL_TIMER_TICK = 2 * time.Millisecond
 )
 
 func (c *Command) String() string {
@@ -63,9 +61,10 @@ func (c *Command) Stop(signal os.Signal, timeout time.Duration) {
 		return
 	}
 
-	gracefulTimerChannel := time.Tick(2 * time.Millisecond)
+	gracefulTimerChannel := time.Tick(GRACEFUL_TIMER_TICK)
 	killTimerChannel := time.After(timeout)
 
+	log.WithField("cmd", c.cmd).Info("Start stopping process.")
 	c.cmd.Process.Signal(signal)
 
 	for {

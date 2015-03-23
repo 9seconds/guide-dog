@@ -26,6 +26,11 @@ func (env *Environment) String() string {
 }
 
 func (env *Environment) Parse() (variables map[string]string, err error) {
+	if env.Options.ConfigPath == "" {
+		log.Info("Config path is not set, nothing to update.")
+		return
+	}
+
 	variables, err = env.parser(env.Options.ConfigPath)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -80,6 +85,7 @@ func NewEnvironment(options *opts.Options) (env *Environment, err error) {
 		parser:          getParser(options),
 		previousUpdates: make(map[string]string),
 	}
+	err = env.Update()
 
 	return
 }

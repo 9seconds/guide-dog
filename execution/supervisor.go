@@ -31,6 +31,17 @@ type Supervisor struct {
 	keepAlivers       *sync.WaitGroup
 }
 
+func (sa SupervisorAction) String() string {
+	switch sa {
+	case SUPERVISOR_STOP:
+		return "SUPERVISOR_STOP"
+	case SUPERVISOR_RESTART:
+		return "SUPERVISOR_RESTART"
+	default:
+		return "ERROR"
+	}
+}
+
 func (s *Supervisor) String() string {
 	return fmt.Sprintf("<Supervisor(cmd='%v', command='%v', exit=%t, exitCodeChannel='%v', gracefulSignal=%v, gracefulTimeout=%v, hasTTY=%t, restartOnFailures=%t, supervisorChannel=%v, keepAlivers=%v)>",
 		s.cmd,
@@ -51,6 +62,8 @@ func (s *Supervisor) Start() {
 	s.cmd = NewCommand(s.command, s.hasTTY)
 	s.cmd.Start()
 
+	log.WithField("cmd", s.cmd).Info("Start process.")
+
 	s.exit = false
 	if s.restartOnFailures {
 		go s.keepAlive()
@@ -62,9 +75,11 @@ func (s *Supervisor) Start() {
 func (s *Supervisor) Signal(event SupervisorAction) {
 	switch event {
 	case SUPERVISOR_RESTART:
+		log.WithField("event", event).Info("Incoming restart event.")
 		s.stop()
 		s.Start()
 	case SUPERVISOR_STOP:
+		log.WithField("event", event).Info("Incoming stop event.")
 		s.stop()
 		s.exitCodeChannel <- s.cmd.ExitCode()
 	}
@@ -78,17 +93,25 @@ func (s *Supervisor) stopped() bool {
 }
 
 func (s *Supervisor) stop() {
+	log.Info("Stop external process.")
+
+	log.Debug("Disable keepalivers.")
 	s.exit = true
 	s.keepAlivers.Wait()
+	log.Debug("Keepalivers disabled.")
 
 	if !s.stopped() {
+		log.Debug("Start stopping process.")
 		s.cmd.Stop(s.gracefulSignal, s.gracefulTimeout)
+	} else {
+		log.Debug("Process already stopped.")
 	}
 }
 
 func (s *Supervisor) keepAlive() {
 	s.keepAlivers.Add(1)
 
+	log.Debug("Start keepaliver.")
 	for !s.exit {
 		if s.stopped() {
 			log.Debug("Process is stopped, restarting.")
@@ -96,6 +119,7 @@ func (s *Supervisor) keepAlive() {
 		}
 		time.Sleep(SUPERVISOR_TIMEOUT)
 	}
+	log.Debug("Stop keepaliver.")
 
 	s.keepAlivers.Done()
 }
