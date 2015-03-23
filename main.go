@@ -44,7 +44,7 @@ var (
 			String()
 	pathsToTrack = cmdLine.
 			Flag("path-to-track", "Paths to track.").
-			Short('t').
+			Short('p').
 			Strings()
 	lockFile = cmdLine.
 			Flag("lock-file", "Lockfile on the local machine to acquire.").
