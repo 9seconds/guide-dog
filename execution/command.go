@@ -18,14 +18,6 @@ type Command struct {
 	cmd *exec.Cmd
 }
 
-const (
-	COMMAND_STILL_RUNNING       = -1
-	COMMAND_INTERRUPT_EXIT_CODE = 130
-	COMMAND_UNKNOWN_EXIT_CODE   = 70
-
-	GRACEFUL_TIMER_TICK = 2 * time.Millisecond
-)
-
 func (c *Command) String() string {
 	return fmt.Sprintf("<Command(command='%v' (%v))>",
 		c.cmd.Args,
@@ -61,7 +53,7 @@ func (c *Command) Stop(signal os.Signal, timeout time.Duration) {
 		return
 	}
 
-	gracefulTimerChannel := time.Tick(GRACEFUL_TIMER_TICK)
+	gracefulTimerChannel := time.Tick(GRACEFUL_SIGNAL_TIMEOUT)
 	killTimerChannel := time.After(timeout)
 
 	log.WithField("cmd", c.cmd).Info("Start stopping process.")
@@ -135,7 +127,7 @@ func makePTYCommand(cmd *exec.Cmd) (*exec.Cmd, error) {
 			if cmd.ProcessState != nil {
 				return
 			}
-			time.Sleep(SUPERVISOR_TIMEOUT)
+			time.Sleep(PTY_TIMEOUT)
 		}
 	}()
 

@@ -19,7 +19,7 @@ func Execute(command []string, env *environment.Environment) int {
 				defer env.Options.LockFile.Release()
 				break
 			}
-			time.Sleep(SUPERVISOR_TIMEOUT)
+			time.Sleep(LOCK_FILE_TIMEOUT)
 		}
 	}
 

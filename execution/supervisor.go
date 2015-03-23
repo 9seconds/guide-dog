@@ -9,15 +9,6 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
-type SupervisorAction uint8
-
-const (
-	SUPERVISOR_STOP SupervisorAction = iota
-	SUPERVISOR_RESTART
-
-	SUPERVISOR_TIMEOUT = 5 * time.Millisecond
-)
-
 type Supervisor struct {
 	cmd               *Command
 	command           []string
