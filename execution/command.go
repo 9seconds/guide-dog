@@ -52,8 +52,15 @@ func (c *Command) ExitCode() int {
 	return exitCode
 }
 
-func (c *Command) Start() {
-	go c.cmd.Run()
+func (c *Command) Start() (err error) {
+	err = c.cmd.Start()
+	if err != nil {
+		return
+	}
+
+	go c.cmd.Wait()
+
+	return
 }
 
 func (c *Command) Stop(signal os.Signal, timeout time.Duration) {
