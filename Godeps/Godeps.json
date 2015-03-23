@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/9seconds/guide-dog",
-	"GoVersion": "go1.2.1",
+	"GoVersion": "go1.4.2",
 	"Deps": [
 		{
 			"ImportPath": "github.com/Sirupsen/logrus",
@@ -12,6 +12,16 @@
 			"Rev": "6b4e7dc5e3143b85ea77909c72caf89416fc2915"
 		},
 		{
+			"ImportPath": "github.com/docker/docker/pkg/term",
+			"Comment": "v1.4.1-1085-g8b58e73",
+			"Rev": "8b58e73da429b664ed2dbec7c0caab1fb8a45ccd"
+		},
+		{
+			"ImportPath": "github.com/kr/pty",
+			"Comment": "release.r56-25-g05017fc",
+			"Rev": "05017fcccf23c823bfdea560dcc958a136e54fb7"
+		},
+		{
 			"ImportPath": "github.com/vaughan0/go-ini",
 			"Rev": "a98ad7ee00ec53921f08832bc06ecf7fd600e6a1"
 		},
@@ -19,6 +29,11 @@
 			"ImportPath": "gopkg.in/alecthomas/kingpin.v1",
 			"Comment": "v1.3.6",
 			"Rev": "55a69a226d28a43b913720f5d765706d49c8fa9e"
+		},
+		{
+			"ImportPath": "gopkg.in/fsnotify.v1",
+			"Comment": "v1.2.0",
+			"Rev": "96c060f6a6b7e0d6f75fddd10efeaca3e5d1bcb0"
 		},
 		{
 			"ImportPath": "gopkg.in/yaml.v2",
