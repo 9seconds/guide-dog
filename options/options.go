@@ -53,8 +53,7 @@ func (opt *Options) String() string {
 		opt.GracefulTimeout,
 		opt.LockFile,
 		opt.Signal,
-		opt.Supervisor,
-	)
+		opt.Supervisor)
 }
 
 func (sm SupervisorMode) String() string {

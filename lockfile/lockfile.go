@@ -30,12 +30,10 @@ func (l *Lock) Acquire() (err error) {
 
 	err = syscall.Flock(int(file.Fd()), syscall.LOCK_EX|syscall.LOCK_NB)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"filename":   l.name,
-			"descriptor": int(file.Fd()),
-		}).Error("Cannot acquire lock.")
+		log.WithField("lock", l).Info("Cannot acquire lock.")
 
 		file.Close()
+
 		return
 	}
 
@@ -45,7 +43,10 @@ func (l *Lock) Acquire() (err error) {
 }
 
 func (l *Lock) Release() error {
-	defer l.file.Close()
+	defer func() {
+		l.file.Close()
+		os.Remove(l.name)
+	}()
 
 	err := syscall.Flock(int(l.file.Fd()), syscall.LOCK_UN)
 	if err != nil {

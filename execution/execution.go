@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 
@@ -12,6 +13,16 @@ import (
 )
 
 func Execute(command []string, env *environment.Environment) int {
+	if env.Options.LockFile != nil {
+		for {
+			if err := env.Options.LockFile.Acquire(); err == nil {
+				defer env.Options.LockFile.Release()
+				break
+			}
+			time.Sleep(SUPERVISOR_TIMEOUT)
+		}
+	}
+
 	pathsToWatch := []string{env.Options.ConfigPath}
 	for _, path := range env.Options.PathsToTrack {
 		pathsToWatch = append(pathsToWatch, path)
