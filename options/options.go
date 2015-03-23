@@ -59,8 +59,6 @@ func (opt *Options) String() string {
 
 func (sm SupervisorMode) String() string {
 	mode := make([]string, 0, 2)
-	log.Debugf("sm %v", int(sm))
-	log.Debugf("NONE %v, SIMPLE %v, RESTARTING %v", int(SUPERVISOR_MODE_NONE), int(SUPERVISOR_MODE_SIMPLE), int(SUPERVISOR_MODE_RESTARTING))
 
 	if sm == SUPERVISOR_MODE_NONE {
 		mode = append(mode, "none")

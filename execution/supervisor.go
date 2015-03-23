@@ -59,10 +59,10 @@ func (s *Supervisor) String() string {
 func (s *Supervisor) Start() {
 	s.stop()
 
-	s.cmd = NewCommand(s.command, s.hasTTY)
-	err := s.cmd.Start()
-	if err != nil {
+	if cmd, err := NewCommand(s.command, s.hasTTY); err != nil {
 		log.WithField("error", err).Panicf("Cannot start command!")
+	} else {
+		s.cmd = cmd
 	}
 
 	log.WithField("cmd", s.cmd).Info("Start process.")

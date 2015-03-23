@@ -2,12 +2,16 @@ package execution
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
+	"os/signal"
 	"syscall"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	term "github.com/docker/docker/pkg/term"
+	pty "github.com/kr/pty"
 )
 
 type Command struct {
@@ -52,17 +56,6 @@ func (c *Command) ExitCode() int {
 	return exitCode
 }
 
-func (c *Command) Start() (err error) {
-	err = c.cmd.Start()
-	if err != nil {
-		return
-	}
-
-	go c.cmd.Wait()
-
-	return
-}
-
 func (c *Command) Stop(signal os.Signal, timeout time.Duration) {
 	if c.Stopped() {
 		return
@@ -91,10 +84,95 @@ func (c *Command) Stop(signal os.Signal, timeout time.Duration) {
 	}
 }
 
-func NewCommand(commandToExecute []string, hasTTY bool) (cmd *Command) {
-	cmd = &Command{
-		cmd: exec.Command(commandToExecute[0], commandToExecute[1:]...),
+func NewCommand(commandToExecute []string, hasTTY bool) (command *Command, err error) {
+	cmd := exec.Command(commandToExecute[0], commandToExecute[1:]...)
+
+	if hasTTY {
+		cmd, err = makePTYCommand(cmd)
+	} else {
+		cmd, err = makeStandardCommand(cmd)
 	}
 
+	if err != nil {
+		return
+	}
+
+	command = &Command{cmd: cmd}
+
+	go cmd.Wait()
+
 	return
+}
+
+func makeStandardCommand(cmd *exec.Cmd) (*exec.Cmd, error) {
+	log.WithField("cmd", cmd).Info("Run command in standard mode.")
+
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	return cmd, cmd.Start()
+}
+
+func makePTYCommand(cmd *exec.Cmd) (*exec.Cmd, error) {
+	log.WithField("cmd", cmd).Info("Run command with PTY.")
+
+	pty, err := pty.Start(cmd)
+	if err != nil {
+		return cmd, err
+	}
+
+	hostFd := os.Stdin.Fd()
+	oldTerminalState, err := term.SetRawTerminal(hostFd)
+	if err != nil {
+		return cmd, err
+	}
+
+	go func() {
+		defer cleanupPTY(cmd, pty, hostFd, oldTerminalState)
+
+		for {
+			if cmd.ProcessState != nil {
+				return
+			}
+			time.Sleep(SUPERVISOR_TIMEOUT)
+		}
+	}()
+
+	monitorTTYResize(hostFd, pty.Fd())
+
+	go io.Copy(pty, os.Stdin)
+	go io.Copy(os.Stdout, pty)
+
+	return cmd, nil
+}
+
+func cleanupPTY(cmd *exec.Cmd, pty *os.File, hostFd uintptr, state *term.State) {
+	log.WithField("cmd", cmd).Info("Cleanup PTY.")
+
+	term.RestoreTerminal(hostFd, state)
+	pty.Close()
+}
+
+func monitorTTYResize(hostFd uintptr, guestFd uintptr) {
+	resizeTty(hostFd, guestFd)
+
+	winchChan := make(chan os.Signal, 1)
+	signal.Notify(winchChan, syscall.SIGWINCH)
+
+	go func() {
+		for _ = range winchChan {
+			resizeTty(hostFd, guestFd)
+		}
+	}()
+}
+
+func resizeTty(hostFd uintptr, guestFd uintptr) {
+	winsize, err := term.GetWinsize(hostFd)
+
+	if err != nil {
+		return
+	}
+
+	term.SetWinsize(guestFd, winsize)
 }
