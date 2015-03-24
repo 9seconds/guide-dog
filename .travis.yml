@@ -8,6 +8,8 @@ go:
 
 before_install:
     - go get github.com/kr/godep
+    - go get golang.org/x/tools/cmd/cover
+    - go get github.com/stretchr/testify
 
 install:
     - godep restore
