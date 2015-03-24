@@ -1,0 +1,13 @@
+language: go
+
+sudo: false
+
+go:
+    - 1.4
+    - tip
+
+install:
+    godep restore
+
+script:
+    go test -v ./...
