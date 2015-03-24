@@ -31,9 +31,7 @@ func (l *Lock) Acquire() (err error) {
 	err = syscall.Flock(int(file.Fd()), syscall.LOCK_EX|syscall.LOCK_NB)
 	if err != nil {
 		log.WithField("lock", l).Info("Cannot acquire lock.")
-
 		file.Close()
-
 		return
 	}
 

@@ -41,7 +41,7 @@ func Execute(command []string, env *environment.Environment) int {
 	defer close(signalChannel)
 
 	go attachSignalChannel(supervisorChannel, signalChannel)
-	if env.Options.Supervisor == options.SUPERVISOR_MODE_RESTARTING {
+	if env.Options.Supervisor&options.SUPERVISOR_MODE_RESTARTING > 0 {
 		go attachSupervisorChannel(supervisorChannel, watcherChannel)
 	}
 
