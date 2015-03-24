@@ -9,11 +9,12 @@ import (
 )
 
 func makeTempFile() string {
-	if tempFile, err := ioutil.TempFile("", ""); err == nil {
-		return tempFile.Name()
-	} else {
+	tempFile, err := ioutil.TempFile("", "")
+	if err != nil {
 		panic(err)
 	}
+
+	return tempFile.Name()
 }
 
 func TestAcquire(t *testing.T) {
