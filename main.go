@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"strings"
 
 	log "github.com/Sirupsen/logrus"
 	kingpin "gopkg.in/alecthomas/kingpin.v1"
@@ -103,8 +104,15 @@ func main() {
 	log.WithField("environment", env).Info("Environment.")
 
 	if len(*commandToExecute) > 0 {
+		if *runInShell {
+			shell := os.Getenv("SHELL")
+			*commandToExecute = []string{shell, "-i", "-c", strings.Join(*commandToExecute, " ")}
+		}
+
 		exitCode := execution.Execute(*commandToExecute, env)
+
 		log.WithField("exitCode", exitCode).Info("Program exit")
+
 		os.Exit(exitCode)
 	}
 }
