@@ -16,3 +16,7 @@ install:
 
 script:
     go test -race -cover -v ./...
+
+matrix:
+    allow_failures:
+        - go: tip
