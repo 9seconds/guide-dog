@@ -27,7 +27,7 @@ var (
 		Strings()
 	signalName = cmdLine.
 			Flag("signal", "Signal to graceful shutting down of the given process.").
-			Short('s').
+			Short('g').
 			Default("SIGTERM").
 			String()
 	gracefulTimeout = cmdLine.
@@ -53,6 +53,7 @@ var (
 			String()
 	pty = cmdLine.
 		Flag("pty", "Allocate pseudo-terminal.").
+		Short('y').
 		Bool()
 	runInShell = cmdLine.
 			Flag("run-in-shell", "Run command in shell.").
@@ -60,12 +61,15 @@ var (
 			Bool()
 	supervise = cmdLine.
 			Flag("supervise", "Set if it is required to supervise command. By default no supervising is performed.").
+			Short('s').
 			Bool()
 	superviseRestartOnConfigPathChanges = cmdLine.
 						Flag("restart-on-config-changes", "Do the restart of the process if config is changed. Works only if 'supervise' option is enabled.").
+						Short('r').
 						Bool()
 	commandToExecute = cmdLine.
 				Arg("command", "Command which has to be executed.").
+				Required().
 				Strings()
 )
 
@@ -103,18 +107,16 @@ func main() {
 	}
 	log.WithField("environment", env).Info("Environment.")
 
-	if len(*commandToExecute) > 0 {
-		if *runInShell {
-			shell := os.Getenv("SHELL")
-			*commandToExecute = []string{shell, "-i", "-c", strings.Join(*commandToExecute, " ")}
-		}
-
-		exitCode := execution.Execute(*commandToExecute, env)
-
-		log.WithField("exitCode", exitCode).Info("Program exit")
-
-		os.Exit(exitCode)
+	if *runInShell {
+		shell := os.Getenv("SHELL")
+		*commandToExecute = []string{shell, "-i", "-c", strings.Join(*commandToExecute, " ")}
 	}
+
+	exitCode := execution.Execute(*commandToExecute, env)
+
+	log.WithField("exitCode", exitCode).Info("Program exit")
+
+	os.Exit(exitCode)
 }
 
 func configureLogging(debug bool) {
