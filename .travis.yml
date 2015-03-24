@@ -10,12 +10,14 @@ before_install:
     - go get github.com/kr/godep
     - go get golang.org/x/tools/cmd/cover
     - go get github.com/stretchr/testify
+    - go get github.com/golang/lint/golint
 
 install:
     - godep restore
 
 script:
-    go test -race -cover -v ./...
+    - golint ./...
+    - go test -race -cover -v ./...
 
 matrix:
     allow_failures:
