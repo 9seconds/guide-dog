@@ -1,3 +1,4 @@
+// Package options defines common options set for the guide-dog app.
 package options
 
 import (
@@ -12,24 +13,36 @@ import (
 )
 
 type (
-	ConfigFormat   uint8
+	// ConfigFormat defines the type of the config on the given
+	// path. Please check ConfigFormat* constants family for the possible
+	// values.
+	ConfigFormat uint8
+
+	// SupervisorMode defines the mode of supervisor has to operate.
+	// Please check SupervisorMode* constants family for the possible
+	// values.
 	SupervisorMode uint8
 )
 
+// ConfigFormat* consts family defines possible config options, supported
+// by the guide-dog.
 const (
-	CONFIG_FORMAT_NONE ConfigFormat = iota
-	CONFIG_FORMAT_JSON
-	CONFIG_FORMAT_YAML
-	CONFIG_FORMAT_INI
-	CONFIG_FORMAT_ENVDIR
+	ConfigFormatNone ConfigFormat = iota
+	ConfigFormatJSON
+	ConfigFormatYAML
+	ConfigFormatINI
+	ConfigFormatEnvDir
 )
 
+// SupervisorMode* consts family defines possible work modes of the supervisor,
+// supported by the guide-dog.
 const (
-	SUPERVISOR_MODE_NONE SupervisorMode = 1 << iota
-	SUPERVISOR_MODE_SIMPLE
-	SUPERVISOR_MODE_RESTARTING
+	SupervisorModeNone   SupervisorMode = 0
+	SupervisorModeSimple                = 1 << iota
+	SupervisorModeRestarting
 )
 
+// Options is just a storage of the possible options with some interpretations.
 type Options struct {
 	ConfigFormat    ConfigFormat
 	ConfigPath      string
@@ -59,13 +72,13 @@ func (opt *Options) String() string {
 func (sm SupervisorMode) String() string {
 	mode := make([]string, 0, 2)
 
-	if sm == SUPERVISOR_MODE_NONE {
+	if sm == SupervisorModeNone {
 		mode = append(mode, "none")
 	} else {
-		if sm&SUPERVISOR_MODE_SIMPLE > 0 {
+		if sm&SupervisorModeSimple > 0 {
 			mode = append(mode, "simple")
 		}
-		if sm&SUPERVISOR_MODE_RESTARTING > 0 {
+		if sm&SupervisorModeRestarting > 0 {
 			mode = append(mode, "restarting")
 		}
 	}
@@ -75,25 +88,33 @@ func (sm SupervisorMode) String() string {
 
 func (cf ConfigFormat) String() string {
 	switch cf {
-	case CONFIG_FORMAT_NONE:
+	case ConfigFormatNone:
 		return "none"
-	case CONFIG_FORMAT_JSON:
+	case ConfigFormatJSON:
 		return "json"
-	case CONFIG_FORMAT_YAML:
+	case ConfigFormatYAML:
 		return "yaml"
-	case CONFIG_FORMAT_INI:
+	case ConfigFormatINI:
 		return "ini"
-	case CONFIG_FORMAT_ENVDIR:
+	case ConfigFormatEnvDir:
 		return "envdir"
 	default:
 		return "ERROR"
 	}
 }
 
-func NewOptions(debug bool, signal string, envs []string,
-	gracefulTimeout time.Duration, configFormat string,
-	configPath string, pathsToTrack []string, lockFile string,
-	pty bool, supervise bool, restartOnConfigChanges bool) (options *Options, err error) {
+// NewOptions builds new Options struct based on the given parameter list
+func NewOptions(debug bool,
+	signal string,
+	envs []string,
+	gracefulTimeout time.Duration,
+	configFormat string,
+	configPath string,
+	pathsToTrack []string,
+	lockFile string,
+	pty bool,
+	supervise bool,
+	restartOnConfigChanges bool) (options *Options, err error) {
 	convertedConfigFormat, err := parseConfigFormat(configFormat)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -114,15 +135,15 @@ func NewOptions(debug bool, signal string, envs []string,
 
 	convertedEnvs := parseEnvs(envs)
 
-	supervisorMode := SUPERVISOR_MODE_NONE
+	supervisorMode := SupervisorModeNone
 	if supervise {
-		supervisorMode |= SUPERVISOR_MODE_SIMPLE
+		supervisorMode |= SupervisorModeSimple
 	}
 	if restartOnConfigChanges {
-		supervisorMode |= SUPERVISOR_MODE_RESTARTING
+		supervisorMode |= SupervisorModeRestarting
 	}
 
-	var convertedLockFile *lockfile.Lock = nil
+	var convertedLockFile *lockfile.Lock
 	if lockFile != "" {
 		convertedLockFile = lockfile.NewLock(lockFile)
 	}
@@ -146,15 +167,15 @@ func NewOptions(debug bool, signal string, envs []string,
 func parseConfigFormat(name string) (format ConfigFormat, err error) {
 	switch strings.ToLower(name) {
 	case "":
-		format = CONFIG_FORMAT_NONE
+		format = ConfigFormatNone
 	case "json":
-		format = CONFIG_FORMAT_JSON
+		format = ConfigFormatJSON
 	case "yaml":
-		format = CONFIG_FORMAT_YAML
+		format = ConfigFormatYAML
 	case "ini":
-		format = CONFIG_FORMAT_INI
+		format = ConfigFormatINI
 	case "envdir":
-		format = CONFIG_FORMAT_ENVDIR
+		format = ConfigFormatEnvDir
 	default:
 		err = fmt.Errorf("Unknown config format %s", name)
 	}

@@ -1,3 +1,7 @@
+// Package execution contains all logic for execution of external commands
+// based on Environment struct.
+//
+// This file contains Execute function.
 package execution
 
 import (
@@ -12,6 +16,9 @@ import (
 	options "github.com/9seconds/guide-dog/options"
 )
 
+// Execute just executes given command in with given Environment.
+// It configures supervising if necessary, filesystem notifications etc.
+// It does work.
 func Execute(command []string, env *environment.Environment) int {
 	if env.Options.LockFile != nil {
 		for {
@@ -19,7 +26,7 @@ func Execute(command []string, env *environment.Environment) int {
 				defer env.Options.LockFile.Release()
 				break
 			}
-			time.Sleep(LOCK_FILE_TIMEOUT)
+			time.Sleep(timeoutLockFile)
 		}
 	}
 
@@ -34,23 +41,23 @@ func Execute(command []string, env *environment.Environment) int {
 	exitCodeChannel := make(chan int, 1)
 	defer close(exitCodeChannel)
 
-	supervisorChannel := make(chan SupervisorAction, 1)
+	supervisorChannel := make(chan supervisorAction, 1)
 	defer close(supervisorChannel)
 
 	signalChannel := makeSignalChannel()
 	defer close(signalChannel)
 
 	go attachSignalChannel(supervisorChannel, signalChannel)
-	if env.Options.Supervisor&options.SUPERVISOR_MODE_RESTARTING > 0 {
+	if env.Options.Supervisor&options.SupervisorModeRestarting > 0 {
 		go attachSupervisorChannel(supervisorChannel, watcherChannel)
 	}
 
-	supervisor := NewSupervisor(command,
+	supervisor := newSupervisor(command,
 		exitCodeChannel,
 		env.Options.Signal,
 		env.Options.GracefulTimeout,
 		env.Options.PTY,
-		env.Options.Supervisor&options.SUPERVISOR_MODE_SIMPLE > 0,
+		env.Options.Supervisor&options.SupervisorModeSimple > 0,
 		supervisorChannel)
 
 	log.WithField("supervisor", supervisor).Info("Start supervisor.")
@@ -69,31 +76,42 @@ func Execute(command []string, env *environment.Environment) int {
 	return <-exitCodeChannel
 }
 
-func attachSignalChannel(channel chan SupervisorAction, signalChannel chan os.Signal) {
+// attachSignalChannel attaches given signalChannel events and configures
+// basic supervising actions. Basically it just sends stop signal to external
+// command on interrupt.
+func attachSignalChannel(channel chan supervisorAction, signalChannel chan os.Signal) {
 	for {
 		incomingSignal, ok := <-signalChannel
 		if !ok {
 			return
 		}
+
 		log.WithField("signal", incomingSignal).Debug("Signal from OS received.")
-		channel <- SUPERVISOR_STOP
+
+		channel <- supervisorStop
 	}
 }
 
-func attachSupervisorChannel(channel chan SupervisorAction, supervisorChannel chan bool) {
+// attachSupervisorChannel attaches some restart supervisor channel (filesystem
+// notifications for example) to common supervisorAction channel.
+func attachSupervisorChannel(channel chan supervisorAction, supervisorChannel chan bool) {
 	for {
 		event, ok := <-supervisorChannel
 		if !ok {
 			return
 		}
+
 		log.WithFields(log.Fields{
 			"event":   event,
 			"channel": supervisorChannel,
 		}).Debug("Event from supervisor channel is captured.")
-		channel <- SUPERVISOR_RESTART
+
+		channel <- supervisorRestart
 	}
 }
 
+// makeSignalChannel is a generic routine which connects signal handler
+// to the channel.
 func makeSignalChannel() (channel chan os.Signal) {
 	channel = make(chan os.Signal, 1)
 

@@ -1,3 +1,6 @@
+// Package environment has a definition of Environment struct with parser.
+// This file just defines different parsers. For Environment struct please check
+// environment.go file.
 package environment
 
 import (
@@ -13,13 +16,18 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
+// Just a common signature for the function for unmarshalling JSON and YAML.
 type unmarshal func([]byte, interface{}) error
 
+// configFormatNoneParsers basically does nothing, just returns an empty list.
+// the good thing, it never returns error.
 func configFormatNoneParser(path string) (envs map[string]string, err error) {
 	return make(map[string]string), nil
 }
 
-func configUnmarshall(convertFromFloat bool, unpack unmarshal,
+// configUnmarshall does a basic logic for managing JSON and YAML configs.
+func configUnmarshall(convertFromFloat bool,
+	unpack unmarshal,
 	filename string) (envs map[string]string, err error) {
 	content, err := ioutil.ReadFile(filename)
 	if err != nil {
@@ -48,6 +56,7 @@ func configUnmarshall(convertFromFloat bool, unpack unmarshal,
 			continue
 		}
 
+		// OHHI JSON!
 		if convertFromFloat {
 			if floatValue, ok := value.(float64); ok {
 				envs[key] = strconv.Itoa(int(floatValue))
@@ -55,6 +64,7 @@ func configUnmarshall(convertFromFloat bool, unpack unmarshal,
 			}
 		}
 
+		// OHHI YAML!
 		if intValue, ok := value.(int); ok {
 			envs[key] = strconv.Itoa(intValue)
 			continue
@@ -67,14 +77,17 @@ func configUnmarshall(convertFromFloat bool, unpack unmarshal,
 	return
 }
 
+// configFormatJSONParser parses JSON config.
 func configFormatJSONParser(filename string) (map[string]string, error) {
 	return configUnmarshall(true, json.Unmarshal, filename)
 }
 
+// configFormatYAMLParser parses YAML config.
 func configFormatYAMLParser(filename string) (map[string]string, error) {
 	return configUnmarshall(false, yaml.Unmarshal, filename)
 }
 
+// configFormatINIParser parses INI configs.
 func configFormatINIParser(filename string) (envs map[string]string, err error) {
 	file, err := ini.LoadFile(filename)
 	if err != nil {
@@ -95,6 +108,7 @@ func configFormatINIParser(filename string) (envs map[string]string, err error) 
 	return
 }
 
+// configFormatEnvDirParser parses directory in EnvDir way.
 func configFormatEnvDirParser(dirname string) (envs map[string]string, err error) {
 	files, err := ioutil.ReadDir(dirname)
 	if err != nil {

@@ -1,3 +1,7 @@
+// Package execution contains all logic for execution of external commands
+// based on Environment struct.
+//
+// This file contains definition of filesystem notifications tracking.
 package execution
 
 import (
@@ -7,6 +11,8 @@ import (
 	environment "github.com/9seconds/guide-dog/environment"
 )
 
+// makeWatcher starts to track given paths and sends filesystem notifications
+// into channel.
 func makeWatcher(paths []string, env *environment.Environment) (channel chan bool) {
 	channel = make(chan bool, 1)
 
@@ -37,37 +43,40 @@ func makeWatcher(paths []string, env *environment.Environment) (channel chan boo
 		}
 	}
 
-	go func() {
-		defer watcher.Close()
-
-		for {
-			select {
-			case event, ok := <-watcher.Events:
-				if !ok {
-					return
-				}
-
-				if event.Op == 0 {
-					continue
-				}
-
-				log.WithFields(log.Fields{
-					"event": event,
-					"op":    event.Op,
-				}).Info("Event from filesystem is coming")
-
-				env.Update()
-
-				if len(channel) == 0 {
-					channel <- true
-				}
-			case err := <-watcher.Errors:
-				if err != nil {
-					log.WithField("error", err).Error("Some problem with filesystem notifications")
-				}
-			}
-		}
-	}()
+	go watcherLoop(env, channel, watcher)
 
 	return
+}
+
+// watcherLoop defines main watcher loop.
+func watcherLoop(env *environment.Environment, channel chan bool, watcher *fsnotify.Watcher) {
+	defer watcher.Close()
+
+	for {
+		select {
+		case event, ok := <-watcher.Events:
+			if !ok {
+				return
+			}
+
+			if event.Op == 0 {
+				continue
+			}
+
+			log.WithFields(log.Fields{
+				"event": event,
+				"op":    event.Op,
+			}).Info("Event from filesystem is coming")
+
+			env.Update()
+
+			if len(channel) == 0 {
+				channel <- true
+			}
+		case err := <-watcher.Errors:
+			if err != nil {
+				log.WithField("error", err).Error("Some problem with filesystem notifications")
+			}
+		}
+	}
 }

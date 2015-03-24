@@ -1,3 +1,6 @@
+// Package environment has a definition of Environment struct with parser.
+// This file just defines Environment struct. For parsers please check
+// parsers.go file.
 package environment
 
 import (
@@ -9,8 +12,12 @@ import (
 	opts "github.com/9seconds/guide-dog/options"
 )
 
+// environmentParser is just a signature of the function which parsers
+// config for environment variables.
 type environmentParser func(string) (map[string]string, error)
 
+// Environment is just a thin container on opts.Options which can parse
+// environment variables.
 type Environment struct {
 	Options         *opts.Options
 	parser          environmentParser
@@ -25,6 +32,9 @@ func (env *Environment) String() string {
 	)
 }
 
+// Parse does parsing of the config file according to its ConfigFormat.
+// Returns tuple of map with environment variables (key is the name, value
+// is a, umm, value). Error defines the error.
 func (env *Environment) Parse() (variables map[string]string, err error) {
 	if env.Options.ConfigPath == "" {
 		log.Info("Config path is not set, nothing to update.")
@@ -44,12 +54,20 @@ func (env *Environment) Parse() (variables map[string]string, err error) {
 	return
 }
 
+// Update does update of stored environment variables set with retrieved
+// data from Parse output and maintains the set of environment variables
+// of current process (which are derived by executed commands).
 func (env *Environment) Update() (err error) {
+	if env.Options.ConfigFormat == opts.ConfigFormatNone {
+		return
+	}
+
 	variables, err := env.Parse()
 	if err != nil {
 		return
 	}
 
+	// Sets environment variables.
 	for name, value := range variables {
 		log.WithFields(log.Fields{
 			"name":  name,
@@ -60,7 +78,9 @@ func (env *Environment) Update() (err error) {
 		os.Setenv(name, value)
 	}
 
-	for name, _ := range env.previousUpdates {
+	// Maintains the list of previously set environment variables. Removes
+	// obsoletes.
+	for name := range env.previousUpdates {
 		if _, ok := variables[name]; !ok {
 			log.WithField("name", name).Debug("Delete environment variable.")
 			delete(env.previousUpdates, name)
@@ -68,6 +88,8 @@ func (env *Environment) Update() (err error) {
 		}
 	}
 
+	// Maintaines the list of explicitly preset environment variables.
+	// Sets them forcefully, overrides previously set values.
 	for name, value := range env.Options.Envs {
 		log.WithFields(log.Fields{
 			"name":  name,
@@ -79,6 +101,8 @@ func (env *Environment) Update() (err error) {
 	return
 }
 
+// NewEnvironment returns new Environment struct pointer and error if update
+// failed.
 func NewEnvironment(options *opts.Options) (env *Environment, err error) {
 	env = &Environment{
 		Options:         options,
@@ -92,15 +116,15 @@ func NewEnvironment(options *opts.Options) (env *Environment, err error) {
 
 func getParser(options *opts.Options) environmentParser {
 	switch options.ConfigFormat {
-	case opts.CONFIG_FORMAT_NONE:
+	case opts.ConfigFormatNone:
 		return configFormatNoneParser
-	case opts.CONFIG_FORMAT_JSON:
+	case opts.ConfigFormatJSON:
 		return configFormatJSONParser
-	case opts.CONFIG_FORMAT_YAML:
+	case opts.ConfigFormatYAML:
 		return configFormatYAMLParser
-	case opts.CONFIG_FORMAT_INI:
+	case opts.ConfigFormatINI:
 		return configFormatINIParser
-	case opts.CONFIG_FORMAT_ENVDIR:
+	case opts.ConfigFormatEnvDir:
 		return configFormatEnvDirParser
 	default:
 		return configFormatNoneParser

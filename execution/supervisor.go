@@ -1,3 +1,7 @@
+// Package execution contains all logic for execution of external commands
+// based on Environment struct.
+//
+// This file contains supervising routines.
 package execution
 
 import (
@@ -9,35 +13,24 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
-type Supervisor struct {
-	cmd               *Command
+// supervisor defines structure which has all required data for supervising
+// of running process.
+type supervisor struct {
+	cmd               *command
 	command           []string
-	exit              bool
 	exitCodeChannel   chan int
 	gracefulSignal    os.Signal
 	gracefulTimeout   time.Duration
 	hasTTY            bool
 	restartOnFailures bool
-	supervisorChannel chan SupervisorAction
+	supervisorChannel chan supervisorAction
 	keepAlivers       *sync.WaitGroup
 }
 
-func (sa SupervisorAction) String() string {
-	switch sa {
-	case SUPERVISOR_STOP:
-		return "SUPERVISOR_STOP"
-	case SUPERVISOR_RESTART:
-		return "SUPERVISOR_RESTART"
-	default:
-		return "ERROR"
-	}
-}
-
-func (s *Supervisor) String() string {
-	return fmt.Sprintf("<Supervisor(cmd='%v', command='%v', exit=%t, exitCodeChannel='%v', gracefulSignal=%v, gracefulTimeout=%v, hasTTY=%t, restartOnFailures=%t, supervisorChannel=%v, keepAlivers=%v)>",
+func (s *supervisor) String() string {
+	return fmt.Sprintf("<supervisor(cmd='%v', command='%v', exitCodeChannel='%v', gracefulSignal=%v, gracefulTimeout=%v, hasTTY=%t, restartOnFailures=%t, supervisorChannel=%v, keepAlivers=%v)>",
 		s.cmd,
 		s.command,
-		s.exit,
 		s.exitCodeChannel,
 		s.gracefulSignal,
 		s.gracefulTimeout,
@@ -47,10 +40,11 @@ func (s *Supervisor) String() string {
 		s.keepAlivers)
 }
 
-func (s *Supervisor) Start() {
+// Just starts execution of the command and therefore its supervising.
+func (s *supervisor) Start() {
 	s.stop()
 
-	if cmd, err := NewCommand(s.command, s.hasTTY); err != nil {
+	if cmd, err := newCommand(s.command, s.hasTTY); err != nil {
 		log.WithField("error", err).Panicf("Cannot start command!")
 	} else {
 		s.cmd = cmd
@@ -58,7 +52,6 @@ func (s *Supervisor) Start() {
 
 	log.WithField("cmd", s.cmd).Info("Start process.")
 
-	s.exit = false
 	if s.restartOnFailures {
 		go s.keepAlive()
 	} else {
@@ -66,31 +59,34 @@ func (s *Supervisor) Start() {
 	}
 }
 
-func (s *Supervisor) Signal(event SupervisorAction) {
+// Signal defines a callback for the incoming supervisorAction signal and
+// reacts in expected way in a sync fashion.
+func (s *supervisor) Signal(event supervisorAction) {
 	switch event {
-	case SUPERVISOR_RESTART:
+	case supervisorRestart:
 		log.WithField("event", event).Info("Incoming restart event.")
 		s.stop()
 		s.Start()
-	case SUPERVISOR_STOP:
+	case supervisorStop:
 		log.WithField("event", event).Info("Incoming stop event.")
 		s.stop()
 		s.exitCodeChannel <- s.cmd.ExitCode()
 	}
 }
 
-func (s *Supervisor) stopped() bool {
+// stopped just a thin wrapper which tells if command is stopped or not.
+func (s *supervisor) stopped() bool {
 	if s.cmd == nil {
 		return true
 	}
 	return s.cmd.Stopped()
 }
 
-func (s *Supervisor) stop() {
+// stop just do what it names.
+func (s *supervisor) stop() {
 	log.Info("Stop external process.")
 
 	log.Debug("Disable keepalivers.")
-	s.exit = true
 	s.keepAlivers.Wait()
 	log.Debug("Keepalivers disabled.")
 
@@ -102,36 +98,48 @@ func (s *Supervisor) stop() {
 	}
 }
 
-func (s *Supervisor) keepAlive() {
+// keepAlive is just a function to be executed in goroutine. It tracks
+// command execution and restarts if necessary.
+func (s *supervisor) keepAlive() {
 	s.keepAlivers.Add(1)
+	defer s.keepAlivers.Done()
 
 	log.Debug("Start keepaliver.")
-	for !s.exit {
+	for {
 		if s.stopped() {
 			log.Debug("Process is stopped, restarting.")
-			s.supervisorChannel <- SUPERVISOR_RESTART
-		}
-		time.Sleep(SUPERVISOR_TIMEOUT)
-	}
-	log.Debug("Stop keepaliver.")
+			s.supervisorChannel <- supervisorRestart
+			log.Debug("Stop keepaliver.")
 
-	s.keepAlivers.Done()
+			return
+		}
+		time.Sleep(timeoutSupervising)
+	}
 }
 
-func (s *Supervisor) getExitCode() {
+// getExitCode has to be executed if no real supervising is performed. It just
+// returns the command exit code.
+func (s *supervisor) getExitCode() {
 	for {
 		if s.stopped() {
 			s.exitCodeChannel <- s.cmd.ExitCode()
 		}
-		time.Sleep(SUPERVISOR_TIMEOUT)
+		time.Sleep(timeoutSupervising)
 	}
 }
 
-func NewSupervisor(command []string, exitCodeChannel chan int, gracefulSignal os.Signal, gracefulTimeout time.Duration, hasTTY bool, restartOnFailures bool, supervisorChannel chan SupervisorAction) *Supervisor {
-	return &Supervisor{
+// newSupervisor returns new supervisor structure based on the given arguments.
+// No command execution is performed at that moment.
+func newSupervisor(command []string,
+	exitCodeChannel chan int,
+	gracefulSignal os.Signal,
+	gracefulTimeout time.Duration,
+	hasTTY bool,
+	restartOnFailures bool,
+	supervisorChannel chan supervisorAction) *supervisor {
+	return &supervisor{
 		command:           command,
 		exitCodeChannel:   exitCodeChannel,
-		exit:              false,
 		gracefulSignal:    gracefulSignal,
 		gracefulTimeout:   gracefulTimeout,
 		hasTTY:            hasTTY,

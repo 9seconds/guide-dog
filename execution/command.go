@@ -1,3 +1,7 @@
+// Package execution contains all logic for execution of external commands
+// based on Environment struct.
+//
+// This file contains definition of command structure.
 package execution
 
 import (
@@ -14,46 +18,51 @@ import (
 	pty "github.com/kr/pty"
 )
 
-type Command struct {
+// command just a thin wrapper for the exec.Cmd which can restart
+// and do some addition niceties.
+type command struct {
 	cmd *exec.Cmd
 }
 
-func (c *Command) String() string {
-	return fmt.Sprintf("<Command(command='%v' (%v))>",
+func (c *command) String() string {
+	return fmt.Sprintf("<command(command='%v' (%v))>",
 		c.cmd.Args,
 		c.cmd)
 }
 
-func (c *Command) Stopped() bool {
+// Stopped checks if command stopped or not.
+func (c *command) Stopped() bool {
 	return c.cmd.ProcessState != nil
 }
 
-func (c *Command) ExitCode() int {
+// ExitCode returns exit code of the command if it is stopped.
+func (c *command) ExitCode() int {
 	if !c.Stopped() {
 		log.WithField("command", c).Warn("Command is still running!")
-		return COMMAND_STILL_RUNNING
+		return exitCodeStillRunning
 	}
 
 	waitStatus, ok := c.cmd.ProcessState.Sys().(syscall.WaitStatus)
 	if !ok {
 		log.Fatal("Cannot convert ProcessState to WaitStatus!")
-		return COMMAND_UNKNOWN_EXIT_CODE
+		return exitCodeInternalError
 	}
 
 	exitCode := waitStatus.ExitStatus()
 	if exitCode < 0 {
-		exitCode = COMMAND_INTERRUPT_EXIT_CODE
+		exitCode = exitCodeInterrupt
 	}
 
 	return exitCode
 }
 
-func (c *Command) Stop(signal os.Signal, timeout time.Duration) {
+// Stop do what the name defines.
+func (c *command) Stop(signal os.Signal, timeout time.Duration) {
 	if c.Stopped() {
 		return
 	}
 
-	gracefulTimerChannel := time.Tick(GRACEFUL_SIGNAL_TIMEOUT)
+	gracefulTimerChannel := time.Tick(timeoutGracefulSignal)
 	killTimerChannel := time.After(timeout)
 
 	log.WithField("cmd", c.cmd).Info("Start stopping process.")
@@ -70,7 +79,8 @@ func (c *Command) Stop(signal os.Signal, timeout time.Duration) {
 	}
 }
 
-func NewCommand(commandToExecute []string, hasTTY bool) (command *Command, err error) {
+// newCommand returns new running command instance.
+func newCommand(commandToExecute []string, hasTTY bool) (commandToRun *command, err error) {
 	cmd := exec.Command(commandToExecute[0], commandToExecute[1:]...)
 
 	if hasTTY {
@@ -83,13 +93,14 @@ func NewCommand(commandToExecute []string, hasTTY bool) (command *Command, err e
 		return
 	}
 
-	command = &Command{cmd: cmd}
+	commandToRun = &command{cmd: cmd}
 
 	go cmd.Wait()
 
 	return
 }
 
+// makeStandardCommand just attach streams to the command and runs it.
 func makeStandardCommand(cmd *exec.Cmd) (*exec.Cmd, error) {
 	log.WithField("cmd", cmd).Info("Run command in standard mode.")
 
@@ -100,6 +111,8 @@ func makeStandardCommand(cmd *exec.Cmd) (*exec.Cmd, error) {
 	return cmd, cmd.Start()
 }
 
+// makePTY command attaches streams to the command and run it with a
+// preconfigured pseudo TTY.
 func makePTYCommand(cmd *exec.Cmd) (*exec.Cmd, error) {
 	log.WithField("cmd", cmd).Info("Run command with PTY.")
 
@@ -115,13 +128,13 @@ func makePTYCommand(cmd *exec.Cmd) (*exec.Cmd, error) {
 	}
 
 	go func() {
-		defer cleanupPTY(cmd, pty, hostFd, oldTerminalState)
+		defer cleanUpPTY(cmd, pty, hostFd, oldTerminalState)
 
 		for {
 			if cmd.ProcessState != nil {
 				return
 			}
-			time.Sleep(PTY_TIMEOUT)
+			time.Sleep(timeoutPTY)
 		}
 	}()
 
@@ -133,27 +146,31 @@ func makePTYCommand(cmd *exec.Cmd) (*exec.Cmd, error) {
 	return cmd, nil
 }
 
-func cleanupPTY(cmd *exec.Cmd, pty *os.File, hostFd uintptr, state *term.State) {
+// cleanUpPTY closes configured PTY.
+func cleanUpPTY(cmd *exec.Cmd, pty *os.File, hostFd uintptr, state *term.State) {
 	log.WithField("cmd", cmd).Info("Cleanup PTY.")
 
 	term.RestoreTerminal(hostFd, state)
 	pty.Close()
 }
 
+// monitorTTYResize monitors if PTY winSize was changed and changes it
+// in appropriate way.
 func monitorTTYResize(hostFd uintptr, guestFd uintptr) {
-	resizeTty(hostFd, guestFd)
+	resizeTTY(hostFd, guestFd)
 
 	winchChan := make(chan os.Signal, 1)
 	signal.Notify(winchChan, syscall.SIGWINCH)
 
 	go func() {
 		for _ = range winchChan {
-			resizeTty(hostFd, guestFd)
+			resizeTTY(hostFd, guestFd)
 		}
 	}()
 }
 
-func resizeTty(hostFd uintptr, guestFd uintptr) {
+// resizeTTY just does what it names.
+func resizeTTY(hostFd uintptr, guestFd uintptr) {
 	winsize, err := term.GetWinsize(hostFd)
 
 	if err != nil {

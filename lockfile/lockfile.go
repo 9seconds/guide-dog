@@ -1,3 +1,4 @@
+// Package lockfile defines a flock(2)-based implementation of the file lock.
 package lockfile
 
 import (
@@ -8,6 +9,8 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
+// Lock file is a thin wrapper around os.File to give user a possibility
+// to use file as a lock (using flock(2))
 type Lock struct {
 	name string
 	file *os.File
@@ -17,6 +20,7 @@ func (l *Lock) String() string {
 	return fmt.Sprintf("<Lock=(filename='%s', file='%v')>", l.name, l.file)
 }
 
+// Acquire file lock. Returns error if acquiring failed, nil otherwise.
 func (l *Lock) Acquire() (err error) {
 	if l.file != nil {
 		return fmt.Errorf("File %v is already acquired", l.file)
@@ -40,6 +44,7 @@ func (l *Lock) Acquire() (err error) {
 	return
 }
 
+// Release file lock. Returns error if something went wrong, nil otherwise.
 func (l *Lock) Release() error {
 	defer func() {
 		l.file.Close()
@@ -59,6 +64,9 @@ func (l *Lock) Release() error {
 	return err
 }
 
+// NewLock returns new lock instance. Argument is a path to the lock file.
+// Please remember that file would be truncated so it should be file path
+// for absent file or something which has insensitive content.
 func NewLock(filename string) *Lock {
 	return &Lock{name: filename}
 }

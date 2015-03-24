@@ -11,7 +11,7 @@ import (
 	options "github.com/9seconds/guide-dog/options"
 )
 
-const ENV_DIR_EXIT_CODE = 111
+const envDirExitCode = 111
 
 var (
 	cmdLine = kingpin.New("guide-dog", "Small supervisor with envdir possibilities.")
@@ -72,7 +72,7 @@ func main() {
 	defer func() {
 		if exc := recover(); exc != nil {
 			log.WithField("err", exc).Fatal("Fatal error happened.")
-			os.Exit(ENV_DIR_EXIT_CODE)
+			os.Exit(envDirExitCode)
 		}
 	}()
 
