@@ -59,19 +59,13 @@ func (c *Command) Stop(signal os.Signal, timeout time.Duration) {
 	log.WithField("cmd", c.cmd).Info("Start stopping process.")
 	c.cmd.Process.Signal(signal)
 
-	for {
+	for !c.Stopped() {
 		select {
 		case <-gracefulTimerChannel:
-			if c.Stopped() {
-				break
-			}
+			continue
 		case <-killTimerChannel:
-			if c.Stopped() {
-				break
-			} else {
-				log.Info("Graceful timeout expired, send kill signal")
-				c.cmd.Process.Signal(syscall.SIGKILL)
-			}
+			log.Info("Graceful timeout expired, send kill signal")
+			c.cmd.Process.Signal(syscall.SIGKILL)
 		}
 	}
 }
