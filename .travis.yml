@@ -6,8 +6,11 @@ go:
     - 1.4
     - tip
 
+before_install:
+    - go get github.com/kr/godep
+
 install:
-    godep restore
+    - godep restore
 
 script:
-    go test -v ./...
+    go test -race -cover -v ./...
