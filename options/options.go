@@ -167,6 +167,8 @@ func NewOptions(debug bool,
 func parseConfigFormat(name string) (format ConfigFormat, err error) {
 	switch strings.ToLower(name) {
 	case "":
+		fallthrough
+	case "none":
 		format = ConfigFormatNone
 	case "json":
 		format = ConfigFormatJSON
