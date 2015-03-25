@@ -26,33 +26,6 @@ func TestParseEnvs(t *testing.T) {
 	assert.Equal(t, parsed["complex2"], "1=1=1")
 }
 
-func TestParseConfigFormat(t *testing.T) {
-	validNames := []string{"", "none", "json", "yaml", "ini", "envdir"}
-	formats := []ConfigFormat{ConfigFormatNone, ConfigFormatNone,
-		ConfigFormatJSON, ConfigFormatYAML, ConfigFormatINI, ConfigFormatEnvDir}
-
-	for idx, name := range validNames {
-		for _, caseSensitiveName := range []string{name, strings.ToUpper(name)} {
-			format, err := parseConfigFormat(caseSensitiveName)
-			assert.Nil(t, err)
-			assert.Equal(t, formats[idx], format)
-		}
-	}
-}
-
-func TestParseUnknownConfigFormat(t *testing.T) {
-	_, err := parseConfigFormat("WTF")
-	assert.NotNil(t, err)
-}
-
-func TestConfigFormatNames(t *testing.T) {
-	assert.Equal(t, ConfigFormatNone.String(), "none")
-	assert.Equal(t, ConfigFormatJSON.String(), "json")
-	assert.Equal(t, ConfigFormatYAML.String(), "yaml")
-	assert.Equal(t, ConfigFormatINI.String(), "ini")
-	assert.Equal(t, ConfigFormatEnvDir.String(), "envdir")
-}
-
 func TestParseSignalName(t *testing.T) {
 	signals := map[string]syscall.Signal{
 		"abrt":   syscall.SIGABRT,
@@ -104,15 +77,4 @@ func TestParseSignalName(t *testing.T) {
 func TestUnknownSignalName(t *testing.T) {
 	_, err := parseSignalName("WTF")
 	assert.NotNil(t, err)
-}
-
-func TestSupervisorModeName(t *testing.T) {
-	assert.Equal(t, "none", SupervisorModeNone.String())
-	assert.Equal(t, "simple", SupervisorModeSimple.String())
-	assert.Equal(t, "restarting", SupervisorModeRestarting.String())
-
-	mode := SupervisorModeSimple | SupervisorModeRestarting
-	assert.True(t, strings.Contains(mode.String(), "simple"))
-	assert.True(t, strings.Contains(mode.String(), "restarting"))
-	assert.True(t, !strings.Contains(mode.String(), "none"))
 }
