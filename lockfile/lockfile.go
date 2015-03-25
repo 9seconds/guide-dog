@@ -72,6 +72,7 @@ func (l *Lock) Release() error {
 	return err
 }
 
+// open correctly opens file with different modes.
 func (l *Lock) open() (err error) {
 	l.openLock.Lock()
 	defer l.openLock.Unlock()
@@ -81,22 +82,23 @@ func (l *Lock) open() (err error) {
 	flags := FileOpenFlags
 	if _, err := os.Stat(l.name); os.IsNotExist(err) {
 		flags = FileCreateFlags
-		l.fileWasCreated = true
 	}
 
 	file, err := os.OpenFile(l.name, flags, FileMode)
 	if err != nil && flags == FileCreateFlags {
-		file, err = os.OpenFile(l.name, FileOpenFlags, FileMode)
-		l.fileWasCreated = false
+		flags = FileOpenFlags
+		file, err = os.OpenFile(l.name, flags, FileMode)
 	}
 
 	if err == nil {
 		l.file = file
+		l.fileWasCreated = flags == FileCreateFlags
 	}
 
 	return
 }
 
+// finish just cleans up lock file.
 func (l *Lock) finish() {
 	if l.file != nil {
 		l.file.Close()
