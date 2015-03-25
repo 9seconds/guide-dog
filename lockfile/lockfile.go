@@ -4,20 +4,35 @@ package lockfile
 import (
 	"fmt"
 	"os"
+	"sync"
 	"syscall"
 
 	log "github.com/Sirupsen/logrus"
 )
 
+// File* constants family defines flags which are used to open lock files.
+const (
+	FileOpenFlags   = os.O_WRONLY
+	FileCreateFlags = os.O_CREATE | os.O_EXCL | FileOpenFlags
+)
+
+// FileMode defines default permission for file lock open.
+const FileMode = os.FileMode(0666)
+
 // Lock file is a thin wrapper around os.File to give user a possibility
 // to use file as a lock (using flock(2))
 type Lock struct {
-	name string
-	file *os.File
+	name           string
+	fileWasCreated bool
+	openLock       *sync.Mutex
+	file           *os.File
 }
 
 func (l *Lock) String() string {
-	return fmt.Sprintf("<Lock=(filename='%s', file='%v')>", l.name, l.file)
+	return fmt.Sprintf("<Lock=(filename='%s', fileWasCreated=%t, file='%v')>",
+		l.name,
+		l.fileWasCreated,
+		l.file)
 }
 
 // Acquire file lock. Returns error if acquiring failed, nil otherwise.
@@ -26,30 +41,25 @@ func (l *Lock) Acquire() (err error) {
 		return fmt.Errorf("File %v is already acquired", l.file)
 	}
 
-	file, err := os.Create(l.name)
-	if err != nil {
-		log.WithField("filename", l.name).Info("Cannot create file.")
+	if err = l.open(); err != nil {
+		log.WithField("filename", l.name).Info("Cannot open file.")
+		l.finish()
 		return
 	}
 
-	err = syscall.Flock(int(file.Fd()), syscall.LOCK_EX|syscall.LOCK_NB)
+	err = syscall.Flock(int(l.file.Fd()), syscall.LOCK_EX|syscall.LOCK_NB)
 	if err != nil {
 		log.WithField("lock", l).Info("Cannot acquire lock.")
-		file.Close()
+		l.finish()
 		return
 	}
-
-	l.file = file
 
 	return
 }
 
 // Release file lock. Returns error if something went wrong, nil otherwise.
 func (l *Lock) Release() error {
-	defer func() {
-		l.file.Close()
-		os.Remove(l.name)
-	}()
+	defer l.finish()
 
 	err := syscall.Flock(int(l.file.Fd()), syscall.LOCK_UN)
 	if err != nil {
@@ -58,15 +68,47 @@ func (l *Lock) Release() error {
 			"descriptor": int(l.file.Fd()),
 		}).Error("Cannot release lock.")
 	}
-	l.file.Close()
-	l.file = nil
 
 	return err
+}
+
+func (l *Lock) open() (err error) {
+	l.openLock.Lock()
+	defer l.openLock.Unlock()
+
+	l.fileWasCreated = false
+
+	flags := FileOpenFlags
+	if _, err := os.Stat(l.name); os.IsNotExist(err) {
+		flags = FileCreateFlags
+		l.fileWasCreated = true
+	}
+
+	file, err := os.OpenFile(l.name, flags, FileMode)
+	if err != nil && flags == FileCreateFlags {
+		file, err = os.OpenFile(l.name, FileOpenFlags, FileMode)
+		l.fileWasCreated = false
+	}
+
+	if err == nil {
+		l.file = file
+	}
+
+	return
+}
+
+func (l *Lock) finish() {
+	if l.file != nil {
+		l.file.Close()
+		if l.fileWasCreated {
+			os.Remove(l.name)
+		}
+	}
 }
 
 // NewLock returns new lock instance. Argument is a path to the lock file.
 // Please remember that file would be truncated so it should be file path
 // for absent file or something which has insensitive content.
 func NewLock(filename string) *Lock {
-	return &Lock{name: filename}
+	return &Lock{name: filename, fileWasCreated: false, openLock: new(sync.Mutex)}
 }

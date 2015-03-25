@@ -33,12 +33,13 @@ func TestReleaseOK(t *testing.T) {
 	defer os.Remove(fileName)
 
 	lock := NewLock(fileName)
+	defer lock.finish()
 
 	assert.Nil(t, lock.Acquire())
 	assert.Nil(t, lock.Release())
 
 	_, err := os.Stat(fileName)
-	assert.True(t, os.IsNotExist(err))
+	assert.Nil(t, err)
 }
 
 func TestReleaseAbsentLock(t *testing.T) {
