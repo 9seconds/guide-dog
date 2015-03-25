@@ -100,3 +100,12 @@ func TestCannotAcquireWithWrongPermissions(t *testing.T) {
 	lock := NewLock(fileName)
 	assert.NotNil(t, lock.Acquire())
 }
+
+func TestLockDirectory(t *testing.T) {
+	tempDir, _ := ioutil.TempDir("", "")
+	defer os.RemoveAll(tempDir)
+
+	lock := NewLock(tempDir)
+	assert.Nil(t, lock.Acquire())
+	assert.Nil(t, lock.Release())
+}
