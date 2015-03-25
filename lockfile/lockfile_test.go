@@ -28,6 +28,26 @@ func TestAcquire(t *testing.T) {
 	assert.NotNil(t, lock.Acquire())
 }
 
+func TestAcquireNotCreated(t *testing.T) {
+	name := "TestAcquireNotCreated"
+
+	lock := NewLock(name)
+	defer os.Remove(name)
+	defer lock.finish()
+
+	assert.Nil(t, lock.Acquire())
+	_, err := os.Stat(name)
+	assert.Nil(t, err)
+
+	assert.NotNil(t, lock.Acquire())
+	_, err = os.Stat(name)
+	assert.Nil(t, err)
+
+	assert.Nil(t, lock.Release())
+	_, err = os.Stat(name)
+	assert.True(t, os.IsNotExist(err))
+}
+
 func TestReleaseOK(t *testing.T) {
 	fileName := makeTempFile()
 	defer os.Remove(fileName)
