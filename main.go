@@ -109,7 +109,6 @@ func mainWithExitCode() int {
 	configureLogging(*debug)
 
 	parsedOptions, err := options.NewOptions(
-		*debug,
 		*signalName,
 		*envs,
 		*gracefulTimeout,

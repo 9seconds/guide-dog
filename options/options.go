@@ -15,7 +15,6 @@ import (
 type Options struct {
 	ConfigFormat    ConfigFormat
 	ConfigPath      string
-	Debug           bool
 	Envs            map[string]string
 	GracefulTimeout time.Duration
 	LockFile        *lockfile.Lock
@@ -26,11 +25,10 @@ type Options struct {
 }
 
 func (opt *Options) String() string {
-	return fmt.Sprintf("<Options(configFormat='%v', configPath='%v', pathsToTrack='%v', debug='%t', envs='%v', gracefulTimeout='%d', lockFile='%v', signal='%v', supervisor='%v')>",
+	return fmt.Sprintf("<Options(configFormat='%v', configPath='%v', pathsToTrack='%v', envs='%v', gracefulTimeout='%d', lockFile='%v', signal='%v', supervisor='%v')>",
 		opt.ConfigFormat,
 		opt.ConfigPath,
 		opt.PathsToTrack,
-		opt.Debug,
 		opt.Envs,
 		opt.GracefulTimeout,
 		opt.LockFile,
@@ -39,8 +37,7 @@ func (opt *Options) String() string {
 }
 
 // NewOptions builds new Options struct based on the given parameter list
-func NewOptions(debug bool,
-	signal string,
+func NewOptions(signal string,
 	envs []string,
 	gracefulTimeout time.Duration,
 	configFormat string,
@@ -86,7 +83,6 @@ func NewOptions(debug bool,
 	options = &Options{
 		ConfigFormat:    convertedConfigFormat,
 		ConfigPath:      configPath,
-		Debug:           debug,
 		Envs:            convertedEnvs,
 		GracefulTimeout: gracefulTimeout,
 		LockFile:        convertedLockFile,
