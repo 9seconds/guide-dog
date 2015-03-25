@@ -109,3 +109,7 @@ func TestLockDirectory(t *testing.T) {
 	assert.Nil(t, lock.Acquire())
 	assert.Nil(t, lock.Release())
 }
+
+func TestStringer(t *testing.T) {
+	assert.True(t, NewLock("").String() != "")
+}
