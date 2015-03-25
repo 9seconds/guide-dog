@@ -67,3 +67,26 @@ func TestReleaseAbsentLock(t *testing.T) {
 
 	assert.NotNil(t, lock.Release())
 }
+
+func TestLockFileIsNotHarmuful(t *testing.T) {
+	content := []byte("content")
+	fileName := makeTempFile()
+	defer os.Remove(fileName)
+
+	ioutil.WriteFile(fileName, content, os.FileMode(0666))
+
+	lock := NewLock(fileName)
+	defer lock.finish()
+
+	lock.Acquire()
+
+	readContent, err := ioutil.ReadFile(fileName)
+	assert.Nil(t, err)
+	assert.Equal(t, content, readContent)
+
+	lock.Release()
+
+	readContent, err = ioutil.ReadFile(fileName)
+	assert.Nil(t, err)
+	assert.Equal(t, content, readContent)
+}
