@@ -38,7 +38,7 @@ const (
 // supported by the guide-dog.
 const (
 	SupervisorModeNone   SupervisorMode = 0
-	SupervisorModeSimple                = 1 << iota
+	SupervisorModeSimple SupervisorMode = 1 << iota
 	SupervisorModeRestarting
 )
 
