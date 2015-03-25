@@ -16,6 +16,8 @@ import (
 const (
 	profileEnvVariable = "GUIDEDOG_PROFILE"
 
+	version = "0.1"
+
 	envDirExitCode = 111
 )
 
@@ -43,7 +45,7 @@ var (
 	configFormat = cmdLine.
 			Flag("config-format", "Format of configs.").
 			Short('c').
-			String()
+			Enum("", "none", "json", "yaml", "ini", "envdir")
 	configPath = cmdLine.
 			Flag("config-path", "Config path.").
 			Short('f').
@@ -94,6 +96,10 @@ func main() {
 	}()
 
 	os.Exit(exitCode)
+}
+
+func init() {
+	cmdLine.Version(version)
 }
 
 // mainWithExitCode returns the code to exit. This function is required
