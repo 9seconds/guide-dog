@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
+	profile "github.com/davecheney/profile"
 	kingpin "gopkg.in/alecthomas/kingpin.v1"
 
 	environment "github.com/9seconds/guide-dog/environment"
@@ -12,7 +13,11 @@ import (
 	options "github.com/9seconds/guide-dog/options"
 )
 
-const envDirExitCode = 111
+const (
+	profileEnvVariable = "GUIDEDOG_PROFILE"
+
+	envDirExitCode = 111
+)
 
 var (
 	cmdLine = kingpin.New("guide-dog", "Small supervisor with envdir possibilities.")
@@ -73,15 +78,33 @@ var (
 				Strings()
 )
 
+// main is a classic entry point of any program.
 func main() {
-	defer func() {
-		if exc := recover(); exc != nil {
-			log.WithField("err", exc).Fatal("Fatal error happened.")
-			os.Exit(envDirExitCode)
-		}
+	exitCode := 0
+
+	func() {
+		defer func() {
+			if exc := recover(); exc != nil {
+				log.WithField("err", exc).Fatal("Fatal error happened.")
+				exitCode = envDirExitCode
+			}
+		}()
+
+		exitCode = mainWithExitCode()
 	}()
 
+	os.Exit(exitCode)
+}
+
+// mainWithExitCode returns the code to exit. This function is required
+// because I want all deferred functions to be executed, os.Exit exits
+// immediately. This is not cool.
+func mainWithExitCode() int {
 	kingpin.MustParse(cmdLine.Parse(os.Args[1:]))
+
+	if os.Getenv(profileEnvVariable) != "" {
+		defer profile.Start(profile.CPUProfile).Stop()
+	}
 
 	configureLogging(*debug)
 
@@ -116,9 +139,10 @@ func main() {
 
 	log.WithField("exitCode", exitCode).Info("Program exit")
 
-	os.Exit(exitCode)
+	return exitCode
 }
 
+// configureLogging sets logging settings according to the debug option.
 func configureLogging(debug bool) {
 	log.SetOutput(os.Stderr)
 	log.SetFormatter(&log.TextFormatter{})
