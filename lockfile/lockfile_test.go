@@ -90,3 +90,13 @@ func TestLockFileIsNotHarmuful(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, content, readContent)
 }
+
+func TestCannotAcquireWithWrongPermissions(t *testing.T) {
+	fileName := makeTempFile()
+	defer os.Remove(fileName)
+
+	os.Chmod(fileName, os.FileMode(0200))
+
+	lock := NewLock(fileName)
+	assert.NotNil(t, lock.Acquire())
+}

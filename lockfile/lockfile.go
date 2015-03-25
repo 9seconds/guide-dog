@@ -12,7 +12,7 @@ import (
 
 // File* constants family defines flags which are used to open lock files.
 const (
-	FileOpenFlags   = os.O_WRONLY
+	FileOpenFlags   = os.O_RDONLY
 	FileCreateFlags = os.O_CREATE | os.O_EXCL | FileOpenFlags
 )
 
