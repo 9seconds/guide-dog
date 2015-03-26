@@ -25,15 +25,7 @@ type Options struct {
 }
 
 func (opt *Options) String() string {
-	return fmt.Sprintf("<Options(configFormat='%v', configPath='%v', pathsToTrack='%v', envs='%v', gracefulTimeout='%d', lockFile='%v', signal='%v', supervisor='%v')>",
-		opt.ConfigFormat,
-		opt.ConfigPath,
-		opt.PathsToTrack,
-		opt.Envs,
-		opt.GracefulTimeout,
-		opt.LockFile,
-		opt.Signal,
-		opt.Supervisor)
+	return fmt.Sprintf("%+v", *opt)
 }
 
 // NewOptions builds new Options struct based on the given parameter list

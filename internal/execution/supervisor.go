@@ -28,16 +28,7 @@ type supervisor struct {
 }
 
 func (s *supervisor) String() string {
-	return fmt.Sprintf("<supervisor(cmd='%v', command='%v', exitCodeChannel='%v', gracefulSignal=%v, gracefulTimeout=%v, hasTTY=%t, restartOnFailures=%t, supervisorChannel=%v, keepAlivers=%v)>",
-		s.cmd,
-		s.command,
-		s.exitCodeChannel,
-		s.gracefulSignal,
-		s.gracefulTimeout,
-		s.hasTTY,
-		s.restartOnFailures,
-		s.supervisorChannel,
-		s.keepAlivers)
+	return fmt.Sprintf("%+v", *s)
 }
 
 // Just starts execution of the command and therefore its supervising.

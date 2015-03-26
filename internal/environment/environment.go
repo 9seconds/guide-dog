@@ -21,11 +21,7 @@ type Environment struct {
 }
 
 func (env *Environment) String() string {
-	return fmt.Sprintf("<Environment(Options='%v', parser='%v', previousUpdates='%v')>",
-		env.Options,
-		env.parser,
-		env.previousUpdates,
-	)
+	return fmt.Sprintf("%+v", *env)
 }
 
 // Parse does parsing of the config file according to its ConfigFormat.

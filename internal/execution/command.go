@@ -25,9 +25,7 @@ type command struct {
 }
 
 func (c *command) String() string {
-	return fmt.Sprintf("<command(command='%v' (%v))>",
-		c.cmd.Args,
-		c.cmd)
+	return fmt.Sprintf("%+v", c.cmd)
 }
 
 // Stopped checks if command stopped or not.
