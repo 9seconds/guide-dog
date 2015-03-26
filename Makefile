@@ -84,7 +84,7 @@ cross-clean:
 	@rm -rf $(CROSS_BUILD_DIR)
 
 cross-build-directory: cross-clean
-	@mkdir -p $(CROSS_BUILD_DIR) && chown -R $(UID):$(GID) $(CROSS_BUILD_DIR)
+	@mkdir -p $(CROSS_BUILD_DIR) && chown -R $(DEV_UID):$(DEV_GID) $(CROSS_BUILD_DIR)
 
 cross-linux-%: restore cross-build-directory
 	$(call crosscompile,linux,$*)
