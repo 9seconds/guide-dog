@@ -14,10 +14,35 @@ import (
 	log "github.com/Sirupsen/logrus"
 	ini "github.com/vaughan0/go-ini"
 	yaml "gopkg.in/yaml.v2"
+
+	opts "github.com/9seconds/guide-dog/options"
 )
 
-// Just a common signature for the function for unmarshalling JSON and YAML.
-type unmarshal func([]byte, interface{}) error
+type (
+	// Just a common signature for the function for unmarshalling JSON and YAML.
+	unmarshal func([]byte, interface{}) error
+
+	// environmentParser is just a signature of the function which parsers
+	// config for environment variables.
+	environmentParser func(string) (map[string]string, error)
+)
+
+func getParser(options *opts.Options) environmentParser {
+	switch options.ConfigFormat {
+	case opts.ConfigFormatNone:
+		return configFormatNoneParser
+	case opts.ConfigFormatJSON:
+		return configFormatJSONParser
+	case opts.ConfigFormatYAML:
+		return configFormatYAMLParser
+	case opts.ConfigFormatINI:
+		return configFormatINIParser
+	case opts.ConfigFormatEnvDir:
+		return configFormatEnvDirParser
+	default:
+		return configFormatNoneParser
+	}
+}
 
 // configFormatNoneParsers basically does nothing, just returns an empty list.
 // the good thing, it never returns error.

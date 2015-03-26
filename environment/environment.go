@@ -12,10 +12,6 @@ import (
 	opts "github.com/9seconds/guide-dog/options"
 )
 
-// environmentParser is just a signature of the function which parsers
-// config for environment variables.
-type environmentParser func(string) (map[string]string, error)
-
 // Environment is just a thin container on opts.Options which can parse
 // environment variables.
 type Environment struct {
@@ -112,21 +108,4 @@ func NewEnvironment(options *opts.Options) (env *Environment, err error) {
 	err = env.Update()
 
 	return
-}
-
-func getParser(options *opts.Options) environmentParser {
-	switch options.ConfigFormat {
-	case opts.ConfigFormatNone:
-		return configFormatNoneParser
-	case opts.ConfigFormatJSON:
-		return configFormatJSONParser
-	case opts.ConfigFormatYAML:
-		return configFormatYAMLParser
-	case opts.ConfigFormatINI:
-		return configFormatINIParser
-	case opts.ConfigFormatEnvDir:
-		return configFormatEnvDirParser
-	default:
-		return configFormatNoneParser
-	}
 }
