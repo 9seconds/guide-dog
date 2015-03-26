@@ -4,9 +4,7 @@
 // This file contains common constants.
 package execution
 
-import (
-	"time"
-)
+import "time"
 
 // supervisorAction defines the action which is required to be performed
 // with executing command (restart or stop).

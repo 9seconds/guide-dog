@@ -8,9 +8,9 @@ import (
 	profile "github.com/davecheney/profile"
 	kingpin "gopkg.in/alecthomas/kingpin.v1"
 
-	environment "github.com/9seconds/guide-dog/environment"
-	execution "github.com/9seconds/guide-dog/execution"
-	options "github.com/9seconds/guide-dog/options"
+	environment "github.com/9seconds/guide-dog/internal/environment"
+	execution "github.com/9seconds/guide-dog/internal/execution"
+	options "github.com/9seconds/guide-dog/internal/options"
 )
 
 const (
