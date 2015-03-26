@@ -21,8 +21,6 @@ func parseSignalName(name string) (signal syscall.Signal, err error) {
 		signal = syscall.SIGBUS
 	case "SIGCHLD":
 		signal = syscall.SIGCHLD
-	case "SIGCLD":
-		signal = syscall.SIGCLD
 	case "SIGCONT":
 		signal = syscall.SIGCONT
 	case "SIGFPE":
@@ -41,18 +39,12 @@ func parseSignalName(name string) (signal syscall.Signal, err error) {
 		signal = syscall.SIGKILL
 	case "SIGPIPE":
 		signal = syscall.SIGPIPE
-	case "SIGPOLL":
-		signal = syscall.SIGPOLL
 	case "SIGPROF":
 		signal = syscall.SIGPROF
-	case "SIGPWR":
-		signal = syscall.SIGPWR
 	case "SIGQUIT":
 		signal = syscall.SIGQUIT
 	case "SIGSEGV":
 		signal = syscall.SIGSEGV
-	case "SIGSTKFLT":
-		signal = syscall.SIGSTKFLT
 	case "SIGSTOP":
 		signal = syscall.SIGSTOP
 	case "SIGSYS":
@@ -67,8 +59,6 @@ func parseSignalName(name string) (signal syscall.Signal, err error) {
 		signal = syscall.SIGTTIN
 	case "SIGTTOU":
 		signal = syscall.SIGTTOU
-	case "SIGUNUSED":
-		signal = syscall.SIGUNUSED
 	case "SIGURG":
 		signal = syscall.SIGURG
 	case "SIGUSR1":
