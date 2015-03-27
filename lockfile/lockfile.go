@@ -29,10 +29,7 @@ type Lock struct {
 }
 
 func (l *Lock) String() string {
-	return fmt.Sprintf("<Lock=(filename='%s', fileWasCreated=%t, file='%v')>",
-		l.name,
-		l.fileWasCreated,
-		l.file)
+	return fmt.Sprintf("%+v", *l)
 }
 
 // Acquire file lock. Returns error if acquiring failed, nil otherwise.
