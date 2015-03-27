@@ -29,7 +29,7 @@ endef
 
 # ----------------------------------------------------------------------------
 
-all: tools prog-build prog-install
+all: tools build install
 tools: fix lint
 cross: cross-linux cross-darwin cross-freebsd
 clean: prog-clean cross-clean repo-clean
@@ -44,7 +44,7 @@ lint:
 	@golint $(PROJECT)/...
 
 godep:
-	@go get -u github.com/kr/godep
+	@go get github.com/kr/godep
 
 fmt:
 	@go fmt $(PROJECT)/...
@@ -55,10 +55,10 @@ save: godep
 restore: godep
 	@godep restore
 
-prog-build: restore prog-clean
+build: restore prog-clean
 	@go build -a -o $(BUILD_PROG) $(PROJECT)
 
-prog-install: prog-build
+install: build
 	@install -m 0755 $(BUILD_PROG) $(GOBIN)/gd
 
 prog-clean:
