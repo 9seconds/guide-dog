@@ -81,15 +81,13 @@ func configUnmarshall(convertFromFloat bool,
 			continue
 		}
 
-		// OHHI JSON!
-		if convertFromFloat {
-			if floatValue, ok := value.(float64); ok {
-				envs[key] = strconv.FormatFloat(floatValue, 'f', -1, 64)
-				continue
-			}
+		// JSON returns float64 for numbers. The same YAML does for floats.
+		if floatValue, ok := value.(float64); ok {
+			envs[key] = strconv.FormatFloat(floatValue, 'f', -1, 64)
+			continue
 		}
 
-		// OHHI YAML!
+		// YAML returns ints like that.
 		if intValue, ok := value.(int); ok {
 			envs[key] = strconv.Itoa(intValue)
 			continue
