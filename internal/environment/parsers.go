@@ -84,7 +84,7 @@ func configUnmarshall(convertFromFloat bool,
 		// OHHI JSON!
 		if convertFromFloat {
 			if floatValue, ok := value.(float64); ok {
-				envs[key] = strconv.Itoa(int(floatValue))
+				envs[key] = strconv.FormatFloat(floatValue, 'f', -1, 64)
 				continue
 			}
 		}
