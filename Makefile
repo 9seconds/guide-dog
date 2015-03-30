@@ -59,7 +59,7 @@ build: restore prog-clean
 	@go build -a -o $(BUILD_PROG) $(PROJECT)
 
 install: build
-	@install -m 0755 $(BUILD_PROG) $(GOBIN)/gd
+	@sudo install -m 0755 $(BUILD_PROG) /usr/local/bin/gdog
 
 prog-clean:
 	@rm -f $(BUILD_PROG)
