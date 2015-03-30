@@ -27,8 +27,8 @@ type (
 	environmentParser func(string) (map[string]string, error)
 )
 
-func getParser(options *opts.Options) environmentParser {
-	switch options.ConfigFormat {
+func getParser(configFormat opts.ConfigFormat) environmentParser {
+	switch configFormat {
 	case opts.ConfigFormatNone:
 		return configFormatNoneParser
 	case opts.ConfigFormatJSON:

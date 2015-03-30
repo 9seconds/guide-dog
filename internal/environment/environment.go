@@ -98,7 +98,7 @@ func (env *Environment) Update() (err error) {
 func NewEnvironment(options *opts.Options) (env *Environment, err error) {
 	env = &Environment{
 		Options:         options,
-		parser:          getParser(options),
+		parser:          getParser(options.ConfigFormat),
 		previousUpdates: make(map[string]string),
 	}
 	err = env.Update()
