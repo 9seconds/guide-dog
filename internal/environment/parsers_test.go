@@ -4,7 +4,10 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
+
+	opts "github.com/9seconds/guide-dog/internal/options"
 
 	assert "github.com/stretchr/testify/assert"
 )
@@ -21,6 +24,22 @@ func getFileNameWithContent(data string) string {
 func createEnvDirVariable(dir, name, content string) {
 	path := filepath.Join(dir, name)
 	ioutil.WriteFile(path, []byte(content), os.FileMode(0666))
+}
+
+func assertFuncEquals(t *testing.T, func1, func2 interface{}) {
+	type1 := reflect.ValueOf(func1).Pointer()
+	type2 := reflect.ValueOf(func2).Pointer()
+
+	assert.Equal(t, type1, type2)
+}
+
+func TestGetParser(t *testing.T) {
+	assertFuncEquals(t, getParser(opts.ConfigFormatNone), configFormatNoneParser)
+	assertFuncEquals(t, getParser(opts.ConfigFormatJSON), configFormatJSONParser)
+	assertFuncEquals(t, getParser(opts.ConfigFormatYAML), configFormatYAMLParser)
+	assertFuncEquals(t, getParser(opts.ConfigFormatINI), configFormatINIParser)
+	assertFuncEquals(t, getParser(opts.ConfigFormatEnvDir), configFormatEnvDirParser)
+	assertFuncEquals(t, getParser(0xFF), configFormatNoneParser)
 }
 
 func TestConfigFormatJSONOk(t *testing.T) {
