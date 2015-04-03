@@ -74,6 +74,10 @@ var (
 						Flag("restart-on-config-changes", "Do the restart of the process if config is changed. Works only if 'supervise' option is enabled.").
 						Short('r').
 						Bool()
+	exitOnCodes = cmdLine.
+			Flag("exit-on-code", "Exit if executed command finished with given code. You may define this option several times if you want to have several codes.").
+			Short('o').
+			Strings()
 	commandToExecute = cmdLine.
 				Arg("command", "Command which has to be executed.").
 				Required().
