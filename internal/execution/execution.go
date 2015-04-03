@@ -12,8 +12,8 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 
-	environment "github.com/9seconds/guide-dog/internal/environment"
-	options "github.com/9seconds/guide-dog/internal/options"
+	environment "github.com/9seconds/guidedog/internal/environment"
+	options "github.com/9seconds/guidedog/internal/options"
 )
 
 // Execute just executes given command in with given Environment.

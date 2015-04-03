@@ -15,7 +15,7 @@ import (
 	ini "github.com/vaughan0/go-ini"
 	yaml "gopkg.in/yaml.v2"
 
-	opts "github.com/9seconds/guide-dog/internal/options"
+	opts "github.com/9seconds/guidedog/internal/options"
 )
 
 type (

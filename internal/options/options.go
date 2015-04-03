@@ -8,7 +8,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 
-	lockfile "github.com/9seconds/guide-dog/lockfile"
+	lockfile "github.com/9seconds/guidedog/lockfile"
 )
 
 // Options is just a storage of the possible options with some interpretations.

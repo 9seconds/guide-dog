@@ -9,7 +9,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 
-	opts "github.com/9seconds/guide-dog/internal/options"
+	opts "github.com/9seconds/guidedog/internal/options"
 )
 
 // Environment is just a thin container on opts.Options which can parse

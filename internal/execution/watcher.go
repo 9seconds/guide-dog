@@ -8,7 +8,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	fsnotify "gopkg.in/fsnotify.v1"
 
-	environment "github.com/9seconds/guide-dog/internal/environment"
+	environment "github.com/9seconds/guidedog/internal/environment"
 )
 
 // makeWatcher starts to track given paths and sends filesystem notifications

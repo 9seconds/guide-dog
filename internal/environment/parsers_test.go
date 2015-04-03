@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"testing"
 
-	opts "github.com/9seconds/guide-dog/internal/options"
+	opts "github.com/9seconds/guidedog/internal/options"
 
 	assert "github.com/stretchr/testify/assert"
 )

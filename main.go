@@ -8,9 +8,9 @@ import (
 	profile "github.com/davecheney/profile"
 	kingpin "gopkg.in/alecthomas/kingpin.v1"
 
-	environment "github.com/9seconds/guide-dog/internal/environment"
-	execution "github.com/9seconds/guide-dog/internal/execution"
-	options "github.com/9seconds/guide-dog/internal/options"
+	environment "github.com/9seconds/guidedog/internal/environment"
+	execution "github.com/9seconds/guidedog/internal/execution"
+	options "github.com/9seconds/guidedog/internal/options"
 )
 
 const (
@@ -22,7 +22,7 @@ const (
 )
 
 var (
-	cmdLine = kingpin.New("guide-dog", "Small supervisor with envdir possibilities.")
+	cmdLine = kingpin.New("guidedog", "Small supervisor with envdir possibilities.")
 
 	debug = cmdLine.
 		Flag("debug", "Enable debug mode.").
