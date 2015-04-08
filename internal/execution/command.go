@@ -136,7 +136,7 @@ func makePTYCommand(cmd *exec.Cmd) (*exec.Cmd, error) {
 		}
 	}()
 
-	monitorTTYResize(hostFd, pty.Fd())
+	monitorTTYResize(hostFd, pty.Fd(), cmd)
 
 	go io.Copy(pty, os.Stdin)
 	go io.Copy(os.Stdout, pty)
@@ -154,15 +154,22 @@ func cleanUpPTY(cmd *exec.Cmd, pty *os.File, hostFd uintptr, state *term.State) 
 
 // monitorTTYResize monitors if PTY winSize was changed and changes it
 // in appropriate way.
-func monitorTTYResize(hostFd uintptr, guestFd uintptr) {
+func monitorTTYResize(hostFd uintptr, guestFd uintptr, cmd *exec.Cmd) {
 	resizeTTY(hostFd, guestFd)
 
 	winchChan := make(chan os.Signal, 1)
 	signal.Notify(winchChan, syscall.SIGWINCH)
 
 	go func() {
-		for _ = range winchChan {
-			resizeTTY(hostFd, guestFd)
+		tick := time.Tick(timeoutPTY)
+
+		for cmd.ProcessState != nil {
+			select {
+			case <-tick:
+				continue
+			case <-winchChan:
+				resizeTTY(hostFd, guestFd)
+			}
 		}
 	}()
 }
