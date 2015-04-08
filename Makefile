@@ -3,9 +3,9 @@
 # ----------------------------------------------------------------------------
 
 ROOT_DIR        := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-BUILD_PROG      := $(ROOT_DIR)/guide-dog
+BUILD_PROG      := $(ROOT_DIR)/guidedog
 CROSS_BUILD_DIR := $(ROOT_DIR)/build
-PROJECT         := github.com/9seconds/guide-dog
+PROJECT         := github.com/9seconds/guidedog
 
 LINUX_ARCH      := amd64 386 arm
 DARWIN_ARCH     := amd64 386
