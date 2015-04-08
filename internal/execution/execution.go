@@ -31,9 +31,7 @@ func Execute(command []string, env *environment.Environment) int {
 	}
 
 	pathsToWatch := []string{env.Options.ConfigPath}
-	for _, path := range env.Options.PathsToTrack {
-		pathsToWatch = append(pathsToWatch, path)
-	}
+	pathsToWatch = append(pathsToWatch, env.Options.PathsToTrack...)
 
 	watcherChannel := makeWatcher(pathsToWatch, env)
 	defer close(watcherChannel)
@@ -58,7 +56,8 @@ func Execute(command []string, env *environment.Environment) int {
 		env.Options.GracefulTimeout,
 		env.Options.PTY,
 		env.Options.Supervisor&options.SupervisorModeSimple > 0,
-		supervisorChannel)
+		supervisorChannel,
+		env.Options.ExitCodes)
 
 	log.WithField("supervisor", supervisor).Info("Start supervisor.")
 

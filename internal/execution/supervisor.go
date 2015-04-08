@@ -16,15 +16,16 @@ import (
 // supervisor defines structure which has all required data for supervising
 // of running process.
 type supervisor struct {
+	allowedExitCodes  map[int]bool
 	cmd               *command
 	command           []string
 	exitCodeChannel   chan int
 	gracefulSignal    os.Signal
 	gracefulTimeout   time.Duration
 	hasTTY            bool
+	keepAlivers       *sync.WaitGroup
 	restartOnFailures bool
 	supervisorChannel chan supervisorAction
-	keepAlivers       *sync.WaitGroup
 }
 
 func (s *supervisor) String() string {
@@ -98,9 +99,19 @@ func (s *supervisor) keepAlive() {
 	log.Debug("Start keepaliver.")
 	for {
 		if s.stopped() {
-			log.Debug("Process is stopped, restarting.")
-			s.supervisorChannel <- supervisorRestart
-			log.Debug("Stop keepaliver.")
+			exitCode := s.cmd.ExitCode()
+			if _, ok := s.allowedExitCodes[exitCode]; ok {
+				log.WithFields(log.Fields{
+					"exitCode":     exitCode,
+					"allowedCodes": s.allowedExitCodes,
+				}).Info("Exit code means we have to stop the execution.")
+				s.exitCodeChannel <- exitCode
+				return
+			} else {
+				log.Debug("Process is stopped, restarting.")
+				s.supervisorChannel <- supervisorRestart
+				log.Debug("Stop keepaliver.")
+			}
 
 			return
 		}
@@ -127,8 +138,10 @@ func newSupervisor(command []string,
 	gracefulTimeout time.Duration,
 	hasTTY bool,
 	restartOnFailures bool,
-	supervisorChannel chan supervisorAction) *supervisor {
+	supervisorChannel chan supervisorAction,
+	allowedExitCodes map[int]bool) *supervisor {
 	return &supervisor{
+		allowedExitCodes:  allowedExitCodes,
 		command:           command,
 		exitCodeChannel:   exitCodeChannel,
 		gracefulSignal:    gracefulSignal,
@@ -136,5 +149,6 @@ func newSupervisor(command []string,
 		hasTTY:            hasTTY,
 		keepAlivers:       new(sync.WaitGroup),
 		restartOnFailures: restartOnFailures,
-		supervisorChannel: supervisorChannel}
+		supervisorChannel: supervisorChannel,
+	}
 }

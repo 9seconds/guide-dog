@@ -3,6 +3,7 @@ package options
 
 import (
 	"fmt"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -16,6 +17,7 @@ type Options struct {
 	ConfigFormat    ConfigFormat
 	ConfigPath      string
 	Envs            map[string]string
+	ExitCodes       map[int]bool
 	GracefulTimeout time.Duration
 	LockFile        *lockfile.Lock
 	PathsToTrack    []string
@@ -38,7 +40,8 @@ func NewOptions(signal string,
 	lockFile string,
 	pty bool,
 	supervise bool,
-	restartOnConfigChanges bool) (options *Options, err error) {
+	restartOnConfigChanges bool,
+	exitOnCodes []string) (options *Options, err error) {
 	convertedConfigFormat, err := parseConfigFormat(configFormat)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -72,10 +75,20 @@ func NewOptions(signal string,
 		convertedLockFile = lockfile.NewLock(lockFile)
 	}
 
+	exitCodes := make(map[int]bool)
+	for _, value := range exitOnCodes {
+		intValue, err := strconv.Atoi(value)
+		if err != nil {
+			return nil, err
+		}
+		exitCodes[intValue] = true
+	}
+
 	options = &Options{
 		ConfigFormat:    convertedConfigFormat,
 		ConfigPath:      configPath,
 		Envs:            convertedEnvs,
+		ExitCodes:       exitCodes,
 		GracefulTimeout: gracefulTimeout,
 		LockFile:        convertedLockFile,
 		PathsToTrack:    pathsToTrack,

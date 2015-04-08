@@ -128,7 +128,8 @@ func mainWithExitCode() int {
 		*lockFile,
 		*pty,
 		*supervise,
-		*superviseRestartOnConfigPathChanges)
+		*superviseRestartOnConfigPathChanges,
+		*exitOnCodes)
 	if err != nil {
 		panic(err)
 	}

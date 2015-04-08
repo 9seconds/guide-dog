@@ -35,7 +35,8 @@ func createOptions() *opts.Options {
 		"",         // lockFile
 		false,      // pty
 		false,      // supervise
-		false)      // restartOnConfigChanges
+		false,      // restartOnConfigChanges
+		[]string{}) // exitCodes
 
 	return options
 }
