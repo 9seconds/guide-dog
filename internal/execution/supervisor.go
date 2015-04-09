@@ -104,15 +104,14 @@ func (s *supervisor) keepAlive() {
 				log.WithFields(log.Fields{
 					"exitCode":     exitCode,
 					"allowedCodes": s.allowedExitCodes,
-				}).Info("Exit code means we have to stop the execution.")
-				s.exitCodeChannel <- exitCode
-				return
+				}).Debug("Exit code means we have to stop the execution.")
+				s.supervisorChannel <- supervisorStop
 			} else {
 				log.Debug("Process is stopped, restarting.")
 				s.supervisorChannel <- supervisorRestart
-				log.Debug("Stop keepaliver.")
 			}
 
+			log.Debug("Stop keepaliver.")
 			return
 		}
 		time.Sleep(timeoutSupervising)
